@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Session Quiz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02070d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Session Quiz">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,700;1,800;1,900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#02070d; --bg2:#06111c; --cy:#22e0ff; --cy2:#00a8ff; --tx:#e9f7ff; --mu:#7fa6bd;
+  --ok:#2cf08a; --bad:#ff4d6d; --pu:#a855f7; --gr:#22e06a; --bl:#2f6bff; --or:#ff9f1a; --pk:#ff4fa3;
+  --k:14px;
+  --cp:polygon(var(--k) 0,100% 0,100% calc(100% - var(--k)),calc(100% - var(--k)) 100%,0 100%,0 var(--k));
+  --cp2:polygon(calc(var(--k) - 1px) 0,100% 0,100% calc(100% - var(--k) + 1px),calc(100% - var(--k) + 1px) 100%,0 100%,0 calc(var(--k) - 1px));
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:#000;color:var(--tx);font-family:"Exo 2",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;justify-content:center}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+#app{position:relative;width:100%;max-width:520px;height:100%;overflow:hidden;
+  background:
+   radial-gradient(120% 50% at 80% 0%,rgba(0,150,255,.18),transparent 60%),
+   radial-gradient(80% 40% at 0% 30%,rgba(0,220,255,.08),transparent 70%),
+   linear-gradient(160deg,transparent 0 40%,rgba(34,224,255,.05) 40.2%,transparent 40.6%),
+   linear-gradient(200deg,transparent 0 55%,rgba(34,224,255,.04) 55.2%,transparent 55.6%),
+   var(--bg)}
+.view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(112px + env(safe-area-inset-bottom,0px));scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
+.view.on{display:block}
+.view.noNav{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+
+/* chamfered glowing frame */
+.cb{position:relative;display:block;width:100%;text-align:left;filter:drop-shadow(0 0 9px var(--g,rgba(34,224,255,.28)))}
+.cb::before{content:"";position:absolute;inset:0;clip-path:var(--cp);background:linear-gradient(135deg,var(--c,var(--cy)),rgba(255,255,255,.04) 55%,var(--c,var(--cy)))}
+.cb>.in{position:relative;margin:1.5px;clip-path:var(--cp2);background:var(--fill,linear-gradient(160deg,#0a1b2b,#040c15))}
+.cb.btn:active{transform:scale(.985)}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo b{font-style:italic;font-weight:900;font-size:25px;line-height:.92;letter-spacing:.5px;color:#d9f6ff;text-shadow:0 0 14px rgba(34,224,255,.6)}
+.logo b span{display:block;color:var(--cy)}
+.iconbtn{position:relative;width:46px;height:46px;display:grid;place-items:center}
+.iconbtn .in{display:grid;place-items:center}
+.avatar{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--cy);display:grid;place-items:center;font-weight:700;font-size:20px;color:#d9f6ff;background:rgba(34,224,255,.1);box-shadow:0 0 14px rgba(34,224,255,.35)}
+.dot{position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:var(--cy);box-shadow:0 0 8px var(--cy)}
+.right{display:flex;gap:12px}
+
+/* hero */
+.hero{position:relative;min-height:290px;margin-bottom:6px}
+.hero h1{margin:26px 0 12px;font-style:italic;font-weight:900;font-size:clamp(44px,13vw,62px);line-height:.98;letter-spacing:-.5px;position:relative;z-index:2}
+.hero h1 em{display:block;font-style:italic;background:linear-gradient(90deg,#27e6ff,#2a9bff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(34,224,255,.45))}
+.hero p{margin:0;font-size:18px;line-height:1.3;color:#b8cfdd;max-width:270px;position:relative;z-index:2}
+.hero p b{font-weight:400;color:#fff}
+.crown{position:absolute;right:-26px;top:-4px;width:58%;max-width:270px;z-index:1;filter:drop-shadow(0 0 22px rgba(34,224,255,.55));animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-7px)}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:8px 0 22px}
+.stat .in{padding:14px 6px 12px;text-align:center;min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stat svg{width:34px;height:34px;margin-bottom:4px}
+.stat .v{font-size:32px;font-weight:700;line-height:1.05;color:#fff}
+.stat .l{font-size:14px;color:#a6c2d3;line-height:1.1;margin-top:2px}
+
+/* banner */
+.banner .in{padding:18px 18px 20px;min-height:176px;position:relative;overflow:hidden;--fill:linear-gradient(120deg,#07192a,#031019)}
+.pill{display:inline-block;font-size:12px;font-weight:700;color:var(--cy);border:1px solid rgba(34,224,255,.6);border-radius:99px;padding:3px 12px;background:rgba(34,224,255,.06);letter-spacing:.3px}
+.banner h2{margin:10px 0 6px;font-style:italic;font-weight:800;font-size:25px;line-height:1.08;max-width:300px;position:relative;z-index:2}
+.banner p{margin:0 0 14px;color:#8fb0c4;font-size:16px;position:relative;z-index:2}
+.book{position:absolute;right:-6px;bottom:6px;width:46%;max-width:200px;filter:drop-shadow(0 0 14px rgba(34,224,255,.5))}
+.cta{position:relative;z-index:2;display:inline-flex;align-items:center;gap:10px;height:50px;padding:0 24px;color:#021018;font-weight:700;font-size:19px;
+  background:linear-gradient(180deg,#5af0ff,#12cfff);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 0 22px rgba(34,224,255,.7)}
+.cta:active{filter:brightness(.92)}
+.resume{margin-top:10px;font-size:14px;color:#9cc6d9}
+
+/* section titles & subject cards */
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 12px}
+.sh h3{margin:0;font-style:italic;font-weight:800;font-size:27px}
+.sh a{color:#2f9bff;font-size:16px;font-weight:600}
+.subs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sub{--k:12px}
+.sub .in{display:flex;align-items:center;gap:10px;padding:14px 12px;min-height:84px}
+.sub .ic{width:56px;height:56px;flex:none;display:grid;place-items:center;color:var(--c)}
+.sub .ic svg{width:100%;height:100%;filter:drop-shadow(0 0 6px var(--c))}
+.sub .nm{font-weight:700;font-size:15px;line-height:1.15}
+.sub .sb{font-size:13px;color:#9fb9c9;margin-top:3px}
+.sub .ar{margin-left:auto;color:var(--c);flex:none}
+.sub .bar{height:3px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+.sub .bar i{display:block;height:100%;background:var(--c);box-shadow:0 0 6px var(--c)}
+.c-cy{--c:#22e0ff;--g:rgba(34,224,255,.3);--fill:linear-gradient(135deg,#0b3a4d,#06202d)}
+.c-bl{--c:#3f7bff;--g:rgba(47,107,255,.35);--fill:linear-gradient(135deg,#10308f,#0a1c55)}
+.c-pu{--c:#b36bff;--g:rgba(168,85,247,.35);--fill:linear-gradient(135deg,#4a1a86,#25104a)}
+.c-gr{--c:#2cf08a;--g:rgba(34,224,106,.32);--fill:linear-gradient(135deg,#0f5a2d,#073018)}
+.c-or{--c:#ffb04a;--g:rgba(255,159,26,.3);--fill:linear-gradient(135deg,#6b3d0a,#3a2005)}
+.c-pk{--c:#ff6fb5;--g:rgba(255,79,163,.32);--fill:linear-gradient(135deg,#6b1245,#380a25)}
+
+/* bottom nav */
+nav{position:absolute;left:0;right:0;bottom:0;height:calc(86px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);
+  display:none;grid-template-columns:1fr 1fr 96px 1fr 1fr;align-items:end;z-index:20;
+  background:linear-gradient(180deg,rgba(3,12,20,.88),#030a12);border-top:1.5px solid rgba(34,224,255,.5);box-shadow:0 -6px 28px rgba(34,224,255,.16);backdrop-filter:blur(10px)}
+nav.on{display:grid}
+nav button{height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#7f9fb4;font-size:15px;font-weight:600}
+nav button svg{width:34px;height:34px}
+nav button.act{color:var(--cy);text-shadow:0 0 12px rgba(34,224,255,.7)}
+nav button.act svg{filter:drop-shadow(0 0 7px var(--cy))}
+nav .mid{height:auto;align-self:start;margin-top:-26px}
+nav .mid svg{width:96px;height:100px;filter:drop-shadow(0 0 14px rgba(34,224,255,.7))}
+
+/* generic pages */
+.pt{font-style:italic;font-weight:900;font-size:34px;margin:18px 0 4px}
+.ps{color:#93b3c6;margin:0 0 18px;font-size:16px}
+.list{display:grid;gap:12px}
+.row .in{display:flex;align-items:center;gap:14px;padding:15px 16px}
+.row .ic{width:46px;height:46px;flex:none;color:var(--c,var(--cy))}
+.row .ic svg{width:100%;height:100%;filter:drop-shadow(0 0 6px var(--c,var(--cy)))}
+.row b{display:block;font-size:18px}
+.row small{color:#98b5c7;font-size:14px}
+.row .ar{margin-left:auto;color:var(--c,var(--cy))}
+.mt{margin-top:22px}
+h4{margin:24px 0 10px;font-style:italic;font-weight:800;font-size:22px}
+
+/* quiz */
+.qh{display:flex;align-items:center;gap:12px;margin-top:4px}
+.qh .x{width:42px;height:42px;display:grid;place-items:center;flex:none}
+.qh .t{flex:1;min-width:0}
+.qh .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qh .t span{font-size:13px;color:#8fb0c4}
+.chip{font-weight:700;font-size:17px;color:var(--cy);min-width:56px;text-align:right}
+.chip.red{color:var(--bad)}
+.prog{height:6px;background:rgba(255,255,255,.1);border-radius:6px;margin:14px 0 20px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--cy2));box-shadow:0 0 10px var(--cy);transition:width .3s}
+.qcard .in{padding:20px 18px;--fill:linear-gradient(160deg,#0b2236,#05101a)}
+.qcard .n{font-size:13px;color:var(--cy);font-weight:700;margin-bottom:8px}
+.qcard .q{font-size:21px;font-weight:700;line-height:1.3;word-break:break-word}
+.opts{display:grid;gap:10px;margin:16px 0}
+.opt{--k:10px}
+.opt .in{display:flex;gap:12px;align-items:center;padding:13px 14px;font-size:17px;line-height:1.25;word-break:break-word}
+.opt .lt{flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(34,224,255,.5);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--cy)}
+.opt.ok{--c:var(--ok);--g:rgba(44,240,138,.35);--fill:linear-gradient(135deg,#0c4a2c,#06261a)}
+.opt.ok .lt{background:var(--ok);color:#021;border-color:var(--ok)}
+.opt.bad{--c:var(--bad);--g:rgba(255,77,109,.35);--fill:linear-gradient(135deg,#561325,#2a0911)}
+.opt.bad .lt{background:var(--bad);color:#fff;border-color:var(--bad)}
+.opt.dim{opacity:.55}
+.fb{min-height:24px;font-weight:700;margin:2px 2px 10px}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.next{width:100%;justify-content:center}
+
+/* result */
+.res{text-align:center}
+.ring{position:relative;width:200px;height:200px;margin:22px auto 8px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num b{font-size:50px;font-style:italic;font-weight:900}
+.ring .num span{color:#9bb9cb;font-size:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+.mini .in{padding:12px 4px;text-align:center}
+.mini b{display:block;font-size:24px}.mini small{color:#97b4c6;font-size:13px}
+.msg{font-size:18px;margin:8px 0 18px;color:#cfe6f3}
+.two{display:grid;gap:12px}
+.ghost{height:50px;font-weight:700;font-size:17px;color:var(--cy);text-align:center}
+.ghost .in{display:flex;height:100%;align-items:center;justify-content:center}
+
+/* profile */
+.prof{display:flex;gap:16px;align-items:center;margin:16px 0}
+.prof .avatar{width:68px;height:68px;font-size:30px}
+.prof input{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(34,224,255,.4);color:#fff;font:700 22px "Exo 2",system-ui;padding:4px 0}
+.prof small{color:var(--cy);font-weight:700}
+.bars{display:grid;gap:12px}
+.br .tp{display:flex;justify-content:space-between;font-size:15px;margin-bottom:5px}
+.br .tp span:last-child{color:var(--cy);font-weight:700}
+.br .tr{height:7px;border-radius:7px;background:rgba(255,255,255,.1);overflow:hidden}
+.br .tr i{display:block;height:100%;background:linear-gradient(90deg,var(--cy),var(--cy2));box-shadow:0 0 8px var(--cy)}
+.hist{display:grid;gap:8px}
+.hist div{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;border:1px solid rgba(34,224,255,.2);border-radius:10px;background:rgba(5,20,32,.7);font-size:15px}
+.hist span{color:#8fb0c4}.hist b{color:var(--cy)}
+.empty{color:#7fa0b4;text-align:center;padding:14px;border:1px dashed rgba(34,224,255,.3);border-radius:10px}
+.tools{display:grid;gap:10px;margin-top:6px}
+.tool{height:48px;font-weight:600;font-size:16px;color:#cfe6f3}
+.tool .in{display:flex;height:100%;align-items:center;justify-content:center}
+.tool.danger{--c:var(--bad);--g:rgba(255,77,109,.2);color:#ff9fb0}
+
+/* sheet & toast */
+.sheet{position:absolute;inset:0;z-index:40;display:none;background:rgba(0,4,8,.7);backdrop-filter:blur(4px);align-items:flex-end}
+.sheet.on{display:flex}
+.sheet .box{width:100%;padding:8px 18px calc(24px + env(safe-area-inset-bottom,0px))}
+.sheet .in{padding:20px 18px}
+.sheet h3{margin:0 0 10px;font-style:italic;font-weight:800;font-size:24px}
+.sheet p{margin:8px 0;color:#bcd3e1;font-size:16px;line-height:1.35}
+#toast{position:absolute;left:50%;bottom:calc(110px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;opacity:0;pointer-events:none;
+  background:#06202e;border:1px solid var(--cy);padding:10px 18px;border-radius:99px;font-size:15px;transition:.25s;white-space:nowrap;box-shadow:0 0 18px rgba(34,224,255,.4)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<section class="view on" id="v-home">
+  <div class="top">
+    <div class="logo">
+      <svg width="56" height="52" viewBox="0 0 56 52"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7ff3ff"/><stop offset="1" stop-color="#0b8bff"/></linearGradient></defs>
+        <path d="M14 3h36l-6 9H28c-5 0-4 5 0 5h14c9 0 12 6 9 12-2 5-8 6-12 6H6l6-9h25c4 0 4-5 0-5H21C11 21 8 13 14 3z" fill="url(#lg)" style="filter:drop-shadow(0 0 6px #22e0ff)"/><path d="M6 47l9-9h30l-8 9z" fill="url(#lg)" opacity=".85"/></svg>
+      <b>SESSION<span>QUIZ</span></b>
+    </div>
+    <div class="right">
+      <button class="iconbtn cb" id="bell" aria-label="Уведомления" style="width:46px"><span class="in" style="width:100%;height:100%"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22e0ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><i class="dot" id="bellDot"></i></button>
+      <button class="avatar" id="avatar" aria-label="Профиль">D</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>Готов к<em>сессии?</em></h1>
+    <p><b>Тренируйся.</b> Проверяй знания. Забирай высокий балл.</p>
+    <svg class="crown" viewBox="0 0 220 190" aria-hidden="true"><defs>
+      <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6fbff"/><stop offset=".45" stop-color="#3fd6ff"/><stop offset="1" stop-color="#0a5fd0"/></linearGradient>
+      <linearGradient id="cg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9ff0ff"/><stop offset="1" stop-color="#1b6dff"/></linearGradient></defs>
+      <g transform="rotate(-8 110 100)">
+      <ellipse cx="110" cy="140" rx="86" ry="24" fill="none" stroke="url(#cg2)" stroke-width="8"/>
+      <ellipse cx="110" cy="140" rx="86" ry="24" fill="none" stroke="#e8fdff" stroke-width="1.5" opacity=".8"/>
+      <path d="M26 138 L36 68 L72 100 L110 22 L148 100 L184 68 L194 138 Q110 172 26 138Z" fill="url(#cg)" fill-opacity=".72" stroke="#c8f8ff" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M110 22 L110 154 M72 100 L86 156 M148 100 L134 156 M36 68 L72 100 M184 68 L148 100 M36 68 L60 142 M184 68 L160 142" stroke="#e4fcff" stroke-width="1.3" opacity=".6" fill="none"/>
+      <path d="M110 22 L72 100 L110 118 Z" fill="#fff" opacity=".22"/><path d="M110 22 L148 100 L110 118 Z" fill="#0a4bd0" opacity=".3"/>
+      </g></svg>
+  </div>
+
+  <div class="stats">
+    <div class="cb stat"><div class="in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22e0ff" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4.5"/><circle cx="11" cy="13" r="1.2" fill="#22e0ff"/><path d="M11 13l8-8M16 4v4h4"/></svg>
+      <div class="v" id="sTests">0</div><div class="l">Тестов<br>пройдено</div></div></div>
+    <div class="cb stat"><div class="in">
+      <svg viewBox="0 0 24 24" fill="#22e0ff" stroke="#22e0ff" stroke-width="1" stroke-linejoin="round"><path d="M13 2L5 14h6l-1 8 9-13h-6z" fill="none" stroke-width="1.6"/></svg>
+      <div class="v" id="sAcc">0%</div><div class="l">Точность</div></div></div>
+    <div class="cb stat"><div class="in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22e0ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v4M8 21h8M9 18h6"/></svg>
+      <div class="v" id="sRate">—</div><div class="l">Рейтинг</div></div></div>
+  </div>
+
+  <div class="cb banner"><div class="in">
+    <span class="pill">ТВОЯ ПОДГОТОВКА</span>
+    <h2 id="bTitle">Время показать, на что ты способен.</h2>
+    <p id="bSub">Начни тренировку прямо сейчас</p>
+    <button class="cta" id="bGo">Начать тест <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#021018" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+    <svg class="book" viewBox="0 0 190 150" aria-hidden="true"><defs><linearGradient id="bk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7defff" stop-opacity=".9"/><stop offset="1" stop-color="#1668e8" stop-opacity=".75"/></linearGradient></defs>
+      <path d="M8 38L92 62V138L8 112Z" fill="url(#bk)" stroke="#c9f8ff" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M92 62L178 30V104L92 138Z" fill="url(#bk)" stroke="#c9f8ff" stroke-width="2" stroke-linejoin="round" opacity=".92"/>
+      <g stroke="#dffcff" stroke-width="1.2" opacity=".55"><path d="M22 54l56 16M22 66l56 16M22 78l56 16M22 90l56 16M108 70l56-20M108 82l56-20M108 94l56-20M108 106l56-20"/></g></svg>
+  </div>
+  <div class="resume" id="resumeNote" hidden></div></div>
+
+  <div class="sh"><h3>Мои предметы</h3><a href="#" id="allSubs">Все предметы →</a></div>
+  <div class="subs" id="subs"></div>
+</section>
+
+<!-- TESTS -->
+<section class="view" id="v-tests">
+  <h1 class="pt">Тесты</h1><p class="ps">Java · 300 вопросов, 6 тестов по 50 · выбери формат</p>
+  <div class="list" id="modeList"></div>
+  <h4>6 тестов по 50 вопросов</h4>
+  <div class="subs" id="subs2"></div>
+</section>
+
+<!-- ROOMS -->
+<section class="view" id="v-rooms">
+  <h1 class="pt">Комнаты</h1><p class="ps">Игровые режимы: проверь скорость и выдержку</p>
+  <div class="list" id="roomList"></div>
+</section>
+
+<!-- PROFILE -->
+<section class="view" id="v-prof">
+  <h1 class="pt">Профиль</h1>
+  <div class="prof"><div class="avatar" id="pAv">D</div><div style="flex:1"><input id="pName" maxlength="20" aria-label="Имя"><small id="pRank"></small></div></div>
+  <div class="grid3">
+    <div class="cb mini"><div class="in"><b id="pR">0%</b><small>Готовность</small></div></div>
+    <div class="cb mini"><div class="in"><b id="pA">0%</b><small>Точность</small></div></div>
+    <div class="cb mini"><div class="in"><b id="pS">0</b><small>Дней подряд</small></div></div>
+  </div>
+  <h4>Готовность по тестам</h4><div class="bars" id="pBars"></div>
+  <h4>История тестов</h4><div class="hist" id="pHist"></div>
+  <h4>Данные</h4>
+  <div class="tools">
+    <button class="cb btn tool" id="btnInstall" hidden><span class="in">Установить приложение</span></button>
+    <button class="cb btn tool" id="btnExp"><span class="in">Сохранить прогресс в файл</span></button>
+    <button class="cb btn tool" id="btnImp"><span class="in">Загрузить прогресс из файла</span></button>
+    <button class="cb btn tool danger" id="btnReset"><span class="in">Сбросить весь прогресс</span></button>
+  </div>
+  <p class="ps mt" style="font-size:14px">Прогресс хранится на этом устройстве, в браузере. Он остаётся после закрытия приложения. Файл-копия нужна, если будешь чистить данные браузера или менять телефон.</p>
+  <input type="file" id="fileIn" accept="application/json,.json" hidden>
+</section>
+
+<!-- QUIZ -->
+<section class="view noNav" id="v-quiz">
+  <div class="qh">
+    <button class="cb btn x" id="qx" aria-label="Выйти"><span class="in" style="display:grid;place-items:center;height:100%"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22e0ff" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></span></button>
+    <div class="t"><b id="qTitle"></b><span id="qCount"></span></div>
+    <div class="chip" id="qChip"></div>
+  </div>
+  <div class="prog"><i id="qProg"></i></div>
+  <div class="cb qcard"><div class="in"><div class="n" id="qNum"></div><div class="q" id="qText"></div></div></div>
+  <div class="opts" id="qOpts"></div>
+  <div class="fb" id="qFb"></div>
+  <button class="cta next" id="qNext" hidden>Далее</button>
+</section>
+
+<!-- RESULT -->
+<section class="view noNav res" id="v-res">
+  <h1 class="pt" id="rTitle">Тест завершён</h1>
+  <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/><circle id="rArc" cx="50" cy="50" r="42" fill="none" stroke="#22e0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" style="filter:drop-shadow(0 0 5px #22e0ff);transition:stroke-dashoffset .9s"/></svg>
+    <div class="num"><b id="rPct">0%</b><span>правильных</span></div></div>
+  <p class="msg" id="rMsg"></p>
+  <div class="grid3">
+    <div class="cb mini"><div class="in"><b id="rOk" style="color:var(--ok)">0</b><small>Верно</small></div></div>
+    <div class="cb mini"><div class="in"><b id="rBad" style="color:var(--bad)">0</b><small>Ошибок</small></div></div>
+    <div class="cb mini"><div class="in"><b id="rRate">0%</b><small>Готовность</small></div></div>
+  </div>
+  <div class="two">
+    <button class="cta" id="rRetry" style="justify-content:center" hidden>Повторить ошибки</button>
+    <button class="cb btn ghost" id="rAgain"><span class="in">Ещё один тест</span></button>
+    <button class="cb btn ghost" id="rHome"><span class="in">На главную</span></button>
+  </div>
+</section>
+
+<nav id="nav">
+  <button data-go="home" class="act"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2.5 11.5h2.7V20h5v-5.5h3.6V20h5v-8.5h2.7z"/></svg>Главная</button>
+  <button data-go="tests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 10h7M8.5 14h7M8.5 18h4"/></svg>Тесты</button>
+  <button class="mid" id="quick" aria-label="Быстрый тест"><svg viewBox="0 0 96 100"><path d="M48 6l36 20v44L48 90 12 70V26z" fill="#03121d" stroke="#22e0ff" stroke-width="3" stroke-linejoin="round"/><path d="M52 24L36 54h12l-4 22 18-32H50z" fill="none" stroke="#22e0ff" stroke-width="3" stroke-linejoin="round"/></svg></button>
+  <button data-go="rooms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.8 4A2.4 2.4 0 0 1 16.5 18l-1.8-2.2H9.3L7.500 18a2.4 2.4 0 0 1-4.100-1.600l-.8-4A4.500 4.500 0 0 1 7 7z"/><path d="M8 10v3M6.500 11.500h3M15.500 10.500h.01M17.500 12.500h.01"/></svg>Комнаты</button>
+  <button data-go="prof"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-7 8-7s8 2.600 8 7z" stroke-linejoin="round"/></svg>Профиль</button>
+</nav>
+
+<div class="sheet" id="sheet"><div class="box"><div class="cb"><div class="in" id="sheetBody"></div></div></div></div>
+<div id="toast"></div>
+</div>
+
+<script>
+const Q=[{"q":"Java тілін кім және қашан ойлап тапты","o":["Джеймс Гослинг 1995 жылы Sun Microsystems","Бьярне Страуструп 1985 жылы Bell Labs","Гвидо ван Россум 1991 жылы Python","Брендан Айк 1995 жылы Netscape","Ларри Уолл 1987 жылы Perl"],"a":"Джеймс Гослинг 1995 жылы Sun Microsystems"},{"q":"Java алғашқы атауы қалай болды","o":["Oak (Емен) ағашының атымен аталған","Coffee (Кофе) сөзінен шыққан","Island (Арал) атауымен басталған","Green (Жасыл) түстің атымен","Silk (Жібек) деп аталған"],"a":"Oak (Емен) ағашының атымен аталған"},{"q":"Java-ның негізгі ұраны қандай","o":["Write Once, Run Anywhere (WORA)","Code Once, Debug Everywhere","Compile Once, Run Forever","Write Fast, Run Slow","Build Once, Deploy Twice"],"a":"Write Once, Run Anywhere (WORA)"},{"q":"Java платформа тәуелсіздігіне не себеп","o":["Java Virtual Machine (JVM) арқылы","Тікелей машиналық кодқа компиляцияланады","Операциялық жүйеге тікелей байланысты","Тек Windows жүйесінде ғана жұмыс істейді","Аппараттық құралға тәуелді"],"a":"Java Virtual Machine (JVM) арқылы"},{"q":"Java-ның ең маңызды артықшылығы","o":["Портативтілік және платформа тәуелсіздігі","Ең жоғары жылдамдық және өнімділік","Ең аз жадты тұтыну қасиеті","Ең қарапайым синтаксис құрылымы","Ең аз қателіктер шығару"],"a":"Портативтілік және платформа тәуелсіздігі"},{"q":"JDK дегеніміз не","o":["Java Development Kit – әзірлеу құралдары жиынтығы","Java Deployment Kit – тарату құралы","Java Debug Kit – қате табу құралы","Java Documentation Kit – құжаттама","Java Design Kit – дизайн құралы"],"a":"Java Development Kit – әзірлеу құралдары жиынтығы"},{"q":"JRE дегеніміз не","o":["Java Runtime Environment – орындау ортасы","Java Real-time Environment","Java Resource Editor","Java Remote Execution","Java Registry Editor"],"a":"Java Runtime Environment – орындау ортасы"},{"q":"JVM дегеніміз не","o":["Java Virtual Machine – виртуалды машина","Java Visual Manager","Java Version Manager","Java Variable Machine","Java Video Module"],"a":"Java Virtual Machine – виртуалды машина"},{"q":"Java бағдарламасы қалай орындалады","o":[".java → .class (bytecode) → JVM орындайды",".java → .exe → операциялық жүйе орындайды",".java → .dll → Windows орындайды",".java → .bin → Linux орындайды",".java → .app → macOS орындайды"],"a":".java → .class (bytecode) → JVM орындайды"},{"q":"Java-да автоматты жад басқару қалай аталады","o":["Garbage Collector механизмі арқылы жүзеге асады","Manual Memory Management деп аталады","Stack Allocation деп аталады","Heap Fragmentation деп аталады","Pointer Arithmetic деп аталады"],"a":"Garbage Collector механизмі арқылы жүзеге асады"},{"q":"Java тіліндегі негізгі класс кітапханасы","o":["Java Standard Edition (Java SE) API","Java Enterprise Edition (JEE)","Java Micro Edition (JME)","JavaFX Library","Apache Commons"],"a":"Java Standard Edition (Java SE) API"},{"q":"NetBeans IDE-ді кім әзірледі","o":["Бастапқыда Sun Microsystems","Microsoft корпорациясы әзірлеген","Google компаниясы әзірлеген","JetBrains компаниясы әзірлеген","Apache Software Foundation"],"a":"Бастапқыда Sun Microsystems"},{"q":"Java-ның ағымдағы иесі қай компания","o":["Oracle Corporation иелігінде","IBM Corporation иелігінде","Google LLC иелігінде","Microsoft Corporation иелігінде","Apple Inc иелігінде"],"a":"Oracle Corporation иелігінде"},{"q":"Java-ның ашық кодты бөлігі қалай аталады","o":["OpenJDK – ашық нұсқасы қолжетімді","ClosedJDK – жабық нұсқасы","FreeJDK – тегін нұсқасы","PublicJDK – қоғамдық нұсқасы","SharedJDK – ортақ нұсқасы"],"a":"OpenJDK – ашық нұсқасы қолжетімді"},{"q":"Java-да қауіпсіздікті қамтамасыз ететін механизм","o":["Bytecode verifier","Antivirus Integration","Firewall Connection","Hardware Encryption","OS Permission System"],"a":"Bytecode verifier"},{"q":"Java бағдарламасын іске қосу үшін не қажет","o":["Тек JRE орнатылған болса жеткілікті","Тек JDK орнатылуы міндетті","Тек IDE орнатылуы міндетті","Тек компилятор қажет","Тек редактор қажет"],"a":"Тек JRE орнатылған болса жеткілікті"},{"q":"Java-ны әзірлеу үшін не қажет","o":["JDK және IDE (мысалы NetBeans) орнату","JRE және браузер жеткілікті","Тек текст редакторы жеткілікті","Тек операциялық жүйе жеткілікті","Тек интернет байланысы қажет"],"a":"JDK және IDE (мысалы NetBeans) орнату"},{"q":"NetBeans-те жаңа жоба құру үшін не істеу керек","o":["File → New Project → Java Application","Run → Build Project → Execute","Tools → Plugins → Install","Debug → Start Debugging","Window → Reset Windows"],"a":"File → New Project → Java Application"},{"q":"Java-ның соңғы LTS нұсқасы","o":["Java 21 (LTS) қолданылады","Java 8 (LTS) қолданылады","Java 11 (LTS) қолданылады","Java 17 (LTS) қолданылады","Java 23 (LTS) қолданылады"],"a":"Java 21 (LTS) қолданылады"},{"q":"Java-ның басты қолданылу салаларының бірі","o":["Кросс-платформалық қосымшалар","Тек мобильдік ойындар әзірлеу","Тек веб-сайттардың фронтенді","Тек операциялық жүйелер жазу","Тек микроконтроллерлер бағдарламалау"],"a":"Кросс-платформалық қосымшалар"},{"q":"Java-да айнымалыны жариялау қалай басталады","o":["Деректер түрі мен атаудан басталады","var немесе let сөзінен басталады","dim немесе const сөзінен басталады","declare немесе define сөзінен","set немесе assign сөзінен"],"a":"Деректер түрі мен атаудан басталады"},{"q":"Java-да бүтін сандарға арналған негізгі тип","o":["int типі 32 биттік бүтін сандарды сақтайды","short типі 32 биттік бүтін сандарды сақтайды","long типі 32 биттік бүтін сандарды сақтайды","byte типі 32 биттік бүтін сандарды сақтайды","float типі 32 биттік бүтін сандарды сақтайды"],"a":"int типі 32 биттік бүтін сандарды сақтайды"},{"q":"Java-да бөлшек сандарға арналған тип","o":["double типі 64 биттік бөлшек сандарды сақтайды","float типі 64 биттік бөлшек сандарды сақтайды","int типі 64 биттік бөлшек сандарды сақтайды","long типі 64 биттік бөлшек сандарды сақтайды","decimal типі 64 биттік бөлшек сандарды сақтайды"],"a":"double типі 64 биттік бөлшек сандарды сақтайды"},{"q":"Java-да логикалық мәндерді сақтайтын тип","o":["boolean типі true немесе false мәндерін сақтайды","bit типі true немесе false мәндерін сақтайды","bool типі true немесе false мәндерін сақтайды","logical типі true немесе false мәндерін сақтайды","flag типі true немесе false мәндерін сақтайды"],"a":"boolean типі true немесе false мәндерін сақтайды"},{"q":"Java тілінде мәтіндік мәндерді сақтау үшін қандай тип қолданылады?","o":["String — объектілік (reference) тип","char — объектілік тип","text — арнайы мәтіндік тип","varchar — Java-ның кіріктірілген типі","string — бастапқы (primitive) тип"],"a":"String — объектілік (reference) тип"},{"q":"Java-да примитивті және сілтемелі типтердің айырмашылығы","o":["Примитивтер стекте, сілтемелер heap-та сақталады","Примитивтер heap-та, сілтемелер стекте сақталады","Примитивтер дискте, сілтемелер жадта сақталады","Примитивтер регистрде, сілтемелер кэште сақталады","Примитивтер файлда, сілтемелер буферде сақталады"],"a":"Примитивтер стекте, сілтемелер heap-та сақталады"},{"q":"Java-да айнымалыға бастапқы мән беру","o":["Инициализация деп аталады және міндетті емес","Декларация деп аталады және міндетті","Ассайн деп аталады және міндетті","Конструкция деп аталады және міндетті","Аллокация деп аталады және міндетті"],"a":"Инициализация деп аталады және міндетті емес"},{"q":"Java-да қосуды білдіретін оператор","o":["+ арифметикалық қосу операторы","& арифметикалық қосу операторы","| арифметикалық қосу операторы","^ арифметикалық қосу операторы","~ арифметикалық қосу операторы"],"a":"+ арифметикалық қосу операторы"},{"q":"Java-да қалдықты есептейтін оператор","o":["% модуль бойынша қалдық операторы","/ модуль бойынша қалдық операторы","\\ модуль бойынша қалдық операторы","// модуль бойынша қалдық операторы","mod модуль бойынша қалдық операторы"],"a":"% модуль бойынша қалдық операторы"},{"q":"Java-да инкремент операторы","o":["++ мәнді бірлікке арттырады","-- мәнді бірлікке арттырады","+= мәнді бірлікке арттырады","-= мәнді бірлікке арттырады","*= мәнді бірлікке арттырады"],"a":"++ мәнді бірлікке арттырады"},{"q":"Java-да логикалық ЖӘНЕ операторы","o":["&& екі шарт та рас болса рас қайтарады","|| екі шарт та рас болса рас қайтарады","! екі шарт та рас болса рас қайтарады","^ екі шарт та рас болса рас қайтарады","& екі шарт та рас болса рас қайтарады"],"a":"&& екі шарт та рас болса рас қайтарады"},{"q":"Java-да логикалық НЕ операторы","o":["! мәнді теріске айналдырады","~ мәнді теріске айналдырады","^ мәнді теріске айналдырады","- мәнді теріске айналдырады","? мәнді теріске айналдырады"],"a":"! мәнді теріске айналдырады"},{"q":"Java-да салыстыру операторы (тең)","o":["== екі мәннің теңдігін тексереді","= екі мәннің теңдігін тексереді",":= екі мәннің теңдігін тексереді","eq екі мәннің теңдігін тексереді","equals екі мәннің теңдігін тексереді"],"a":"== екі мәннің теңдігін тексереді"},{"q":"Java-да String жолдарын салыстыру үшін","o":["equals() әдісі қолданылады","== операторы қолданылады","compare() әдісі қолданылады","= операторы қолданылады","equiv() әдісі қолданылады"],"a":"equals() әдісі қолданылады"},{"q":"Java-да айнымалы атауы қалай жазылады","o":["CamelCase стилі қолданылады (myVariable)","Snake_case стилі қолданылады (my_variable)","PascalCase стилі қолданылады (MyVariable)","Kebab-case стилі қолданылады (my-variable)","UPPER_CASE стилі қолданылады (MY_VARIABLE)"],"a":"CamelCase стилі қолданылады (myVariable)"},{"q":"Java-да автоматты тип ауыстыру","o":["Widening (кіші типтен үлкенге) рұқсат етіледі","Narrowing (үлкен типтен кішіге) рұқсат етіледі","Boxing (примитивтен объектке) рұқсат етіледі","Unboxing (объекттен примитивке) рұқсат етіледі","Casting (мәжбүрлі ауыстыру) рұқсат етіледі"],"a":"Widening (кіші типтен үлкенге) рұқсат етіледі"},{"q":"Java-да константа қалай жарияланады","o":["final кілт сөзімен жарияланады","const кілт сөзімен жарияланады","static кілт сөзімен жарияланады","readonly кілт сөзімен жарияланады","fixed кілт сөзімен жарияланады"],"a":"final кілт сөзімен жарияланады"},{"q":"Java-да биттік ЖӘНЕ операторы","o":["& биттік деңгейде ЖӘНЕ орындайды","&& биттік деңгейде ЖӘНЕ орындайды","| биттік деңгейде ЖӘНЕ орындайды","|| биттік деңгейде ЖӘНЕ орындайды","^ биттік деңгейде ЖӘНЕ орындайды"],"a":"& биттік деңгейде ЖӘНЕ орындайды"},{"q":"Java-да қосымша тағайындау операторы","o":["+= сол жақ мәнге оң жақ мәнді қосады","=+ сол жақ мәнге оң жақ мәнді қосады","-= сол жақ мәнге оң жақ мәнді қосады","*= сол жақ мәнге оң жақ мәнді қосады","/= сол жақ мәнге оң жақ мәнді қосады"],"a":"+= сол жақ мәнге оң жақ мәнді қосады"},{"q":"Java-да шартты оператордың негізгі түрі","o":["if-else конструкциясы қолданылады","when-else конструкциясы қолданылады","select-case конструкциясы қолданылады","cond-then конструкциясы қолданылады","match-else конструкциясы қолданылады"],"a":"if-else конструкциясы қолданылады"},{"q":"else блогы қашан орындалады","o":["if шарты false болғанда орындалады","if шарты true болғанда орындалады","Әрқашан соңында орындалады","Ешқашан орындалмайды","Тек бір рет орындалады"],"a":"if шарты false болғанда орындалады"},{"q":"Java-да бірнеше шартты тексеру үшін","o":["else if тізбегі қолданылады","else when тізбегі қолданылады","else тізбегі қолданылады","elif тізбегі қолданылады","then if тізбегі қолданылады"],"a":"else if тізбегі қолданылады"},{"q":"switch операторы қай типтермен жұмыс істейді","o":["int, String, enum және char типтері","double, float және boolean типтері","long, short және Object типтері","array, List және Map типтері","void, null және File типтері"],"a":"int, String, enum және char типтері"},{"q":"switch-те міндетті болып табылатын сөз","o":["break әр case соңында қажет","continue әр case соңында қажет","return әр case соңында қажет","exit әр case соңында қажет","stop әр case соңында қажет"],"a":"break әр case соңында қажет"},{"q":"Java-да for циклының құрылымы","o":["for (бастапқы; шарт; қадам)","for (шарт; бастапқы; қадам)","for (қадам; шарт; бастапқы)","for (бастапқы; қадам; шарт)","for (шарт; қадам; бастапқы)"],"a":"for (бастапқы; шарт; қадам)"},{"q":"while циклы қашан тоқтайды","o":["Шарт false болғанда тоқтайды","Шарт true болғанда тоқтайды","Әрқашан шексіз жүреді","Бір рет қана орындалады","Ешқашан орындалмайды"],"a":"Шарт false болғанда тоқтайды"},{"q":"do-while циклының ерекшелігі","o":["Денесі кемінде бір рет орындалады","Денесі ешқашан орындалмайды","Шарт басында тексеріледі","Шарт соңында тексерілмейді","break міндетті түрде қажет"],"a":"Денесі кемінде бір рет орындалады"},{"q":"Циклден шығу үшін қолданылатын сөз","o":["break операторы циклді тоқтатады","continue операторы циклді тоқтатады","return операторы циклді тоқтатады","exit операторы циклді тоқтатады","stop операторы циклді тоқтатады"],"a":"break операторы циклді тоқтатады"},{"q":"Келесі итерацияға өту үшін","o":["continue операторы қолданылады","break операторы қолданылады","return операторы қолданылады","goto операторы қолданылады","skip операторы қолданылады"],"a":"continue операторы қолданылады"},{"q":"Java 14-тен бастап switch жаңа түрі","o":["switch expression (-> белгісімен)","switch statement (-> белгісімен)","match expression (-> белгісімен)","when expression (-> белгісімен)","case expression (-> белгісімен)"],"a":"switch expression (-> белгісімен)"},{"q":"while және do-while айырмашылығы","o":["do-while кемінде бір рет орындалады","while кемінде бір рет орындалады","do-while шартты басында тексереді","while шартты соңында тексереді","Екеуі де бірдей жұмыс істейді"],"a":"do-while кемінде бір рет орындалады"},{"q":"Java-да ішкі циклдарды басқару","o":["Метка (label) арқылы break/continue","Тек ішкі break қолданылады","Тек сыртқы continue қолданылады","Меткасыз мүмкін емес","Автоматты түрде басқарылады"],"a":"Метка (label) арқылы break/continue"},{"q":"for циклының инициализация бөлігінде","o":["Бірнеше айнымалы жариялауға болады","Тек бір айнымалы жариялауға болады","Айнымалы жариялауға болмайды","Тек final айнымалы жариялауға болады","Тек static айнымалы жариялауға болады"],"a":"Бірнеше айнымалы жариялауға болады"},{"q":"Java-да бір өлшемді массив қалай жарияланады","o":["int[] arr; немесе int arr[];","int arr{}; немесе int arr<>;","array<int> arr; немесе list<int>;","int arr[10]; міндетті түрде өлшемімен","var arr = new int;"],"a":"int[] arr; немесе int arr[];"},{"q":"Массивті құру үшін қолданылатын сөз","o":["new кілт сөзі арқылы бөлінеді","create кілт сөзі арқылы бөлінеді","alloc кілт сөзі арқылы бөлінеді","make кілт сөзі арқылы бөлінеді","build кілт сөзі арқылы бөлінеді"],"a":"new кілт сөзі арқылы бөлінеді"},{"q":"Массив өлшемі анықталғаннан кейін","o":["Өзгертуге болмайды (фиксированный)","Өзгертуге болады (динамический)","Автоматты түрде ұлғаяды","Жадтан автоматты жойылады","Өлшемі ешқашан анықталмайды"],"a":"Өзгертуге болмайды (фиксированный)"},{"q":"Массив элементтеріне қолжетімділік","o":["Индекс арқылы 0-ден басталады","Индекс арқылы 1-ден басталады","Аты арқылы тікелей шақырылады","Кілті арқылы тікелей шақырылады","Позициясы арқылы шақырылады"],"a":"Индекс арқылы 0-ден басталады"},{"q":"Java-да массивті инициализациялаудың қысқа жолы","o":["int[] arr = {1, 2, 3, 4};","int[] arr = new int[4] {1,2,3,4};","int[] arr = new int[] (1,2,3,4);","int[] arr = list(1,2,3,4);","int[] arr = array(1,2,3,4);"],"a":"int[] arr = {1, 2, 3, 4};"},{"q":"Массив ұзындығын анықтайтын өріс","o":["length өрісі арқылы анықталады","size() әдісі арқылы анықталады","count өрісі арқылы анықталады","length() әдісі арқылы анықталады","capacity өрісі арқылы анықталады"],"a":"length өрісі арқылы анықталады"},{"q":"Массивтің барлық элементін 0-ге толтыру","o":["Arrays.fill(arr, 0) әдісімен","arr.clear(0) әдісімен","arr.reset(0) әдісімен","arr.init(0) әдісімен","arr.zero() әдісімен"],"a":"Arrays.fill(arr, 0) әдісімен"},{"q":"Массивті сұрыптау үшін қолданылатын класс","o":["Arrays.sort() статикалық әдісі","Collections.sort() статикалық әдісі","ArrayList.sort() әдісі","Sort.array() әдісі","Order.by() әдісі"],"a":"Arrays.sort() статикалық әдісі"},{"q":"Java-да екі өлшемді массив қалай жариялайды?","o":["int[][] arr = new int[3][4];","int arr[][] = new int[3,4];","int arr[3][4];","int arr = new int[3][4];","double[][] arr = new int[3][4];"],"a":"int[][] arr = new int[3][4];"},{"q":"Екі өлшемді массивтің бағандарының санын қайтады","o":["arr[0].length","arr.length","arr.columns","arr.size()","arr.length()"],"a":"arr[0].length"},{"q":"Екі өлшемді массивтің элементіне қалай қол жеткіземіз?","o":["arr[i][j]","arr(i,j)","arr.get(i,j)","arr[i,j]","arr[i].get(j)"],"a":"arr[i][j]"},{"q":"Java-да жол қай класс арқылы жасалады?","o":["String","StringBuilder","StringBuffer","char[]","Text"],"a":"String"},{"q":"String объектілері қалай сақталады?","o":["Immutable (өзгермейтін)","Mutable (өзгеретін)","Heap-та ғана","Stack-та ғана","Файлда"],"a":"Immutable (өзгермейтін)"},{"q":"Екі жолды біріктірудің ең қарапайым әдісі","o":["concat() немесе + операторы","append()","join()","merge()","add()"],"a":"concat() немесе + операторы"},{"q":"Жолдың ұзындығын қайтаратын әдіс","o":["length()","size()","count()","len()","getLength()"],"a":"length()"},{"q":"Жолды үлкен әріпке айналдыру","o":["toUpperCase()","toUpper()","upperCase()","capitalize()","bigLetters()"],"a":"toUpperCase()"},{"q":"Жолды кіші әріпке айналдыру","o":["toLowerCase()","toLower()","lowerCase()","smallLetters()","minimize()"],"a":"toLowerCase()"},{"q":"Әдістен мән қайтару үшін қолданылатын сөз","o":["return","give","send","result","output"],"a":"return"},{"q":"Әдіске параметрлерді қалай береміз","o":["Шақыру кезінде жақша ішіне мәндер жазамыз","Әдіс жариялау кезінде мәндер жазамыз","return алдында мәндер жазамыз","әдіс соңында мәндер жазамыз","класс құру кезінде мәндер жазамыз"],"a":"Шақыру кезінде жақша ішіне мәндер жазамыз"},{"q":"Әдістің қайтару типі void болса","o":["Ешқандай мән қайтармайды","Міндетті түрде null қайтарады","Міндетті түрде 0 қайтарады","Міндетті түрде true қайтарады","Міндетті түрде бос жол қайтарады"],"a":"Ешқандай мән қайтармайды"},{"q":"Әдістің атын қалай жазады","o":["Кіші әріптен бастап camelCase стилі","Үлкен әріптен бастап PascalCase","Барлығы үлкен әріп UPPER_CASE","Кіші әріптермен snake_case","Тіре арқылы kebab-case"],"a":"Кіші әріптен бастап camelCase стилі"},{"q":"Параметрлерді әдепкі мәнмен жазуға бола ма","o":["Жоқ, Java-да әдепкі мән жоқ","Иә, default кілт сөзімен","Иә, = белгісімен","Иә, optional кілт сөзімен","Иә, ? белгісімен"],"a":"Жоқ, Java-да әдепкі мән жоқ"},{"q":"Әдістің денесі қай жақшада жазылады","o":["{ } жақша ішінде жазылады","( ) жақша ішінде жазылады","[ ] жақша ішінде жазылады","< > жақша ішінде жазылады","/* */ жақша ішінде жазылады"],"a":"{ } жақша ішінде жазылады"},{"q":"Әдісті қай сыныпта жазамыз","o":["Өзіміз құрған сынып ішінде жазамыз","Тек Main сынып ішінде жазамыз","Тек интерфейс ішінде жазамыз","Тек абстрактілі сынып ішінде","Тек пакет деңгейінде жазамыз"],"a":"Өзіміз құрған сынып ішінде жазамыз"},{"q":"Әдістің қайтару мәнін сақтау үшін","o":["Айнымалыға теңестіріп сақтаймыз","Тікелей System.out.println ішіне жазамыз","return алдында сақтаймыз","әдіс соңында сақтаймыз","класс құру кезінде сақтаймыз"],"a":"Айнымалыға теңестіріп сақтаймыз"},{"q":"ООБ деген не?","o":["Объектіге бағытталған бағдарламалау","Операциялық жүйеге бағытталған бағдарламалау","Онлайн бағдарламалау","Орталықтандырылған бағдарламалау","Облачный бағдарламалау"],"a":"Объектіге бағытталған бағдарламалау"},{"q":"Java-да класс қалай жарияланады?","o":["class КлассАты { }","public КлассАты { }","object КлассАты { }","new КлассАты { }","type КлассАты { }"],"a":"class КлассАты { }"},{"q":"Объект қалай құрылады?","o":["КлассАты объект = new КлассАты();","КлассАты объект = create();","object объект = new КлассАты();","КлассАты объект = КлассАты();","КлассАты объект = object();"],"a":"КлассАты объект = new КлассАты();"},{"q":"Класс ішіндегі айнымалылар қалай аталады?","o":["өрістер (fields) немесе атрибуттар","параметрлер","локалды айнымалылар","статикалық айнымалылар","глобалды айнымалылар"],"a":"өрістер (fields) немесе атрибуттар"},{"q":"Конструктор деген не?","o":["Объект құрылғанда автоматты шақырылатын әдіс","Объект жойылғанда шақырылатын әдіс","Класс атымен аталатын қарапайым әдіс","main әдісі","toString әдісі"],"a":"Объект құрылғанда автоматты шақырылатын әдіс"},{"q":"Конструктордың қайтару типі бола ма?","o":["Жоқ, конструктор ештеңе қайтармайды","void","Object","boolean","int"],"a":"Жоқ, конструктор ештеңе қайтармайды"},{"q":"Әдепкі конструктор қалай аталады?","o":["Параметрсіз конструктор","Параметрлі конструктор","Копиялау конструкторы","Приват конструктор","Статикалық конструктор"],"a":"Параметрсіз конструктор"},{"q":"Инкапсуляция деген не?","o":["Деректерді жасыру және тек әдістер арқылы қол жеткізу","Бір классты екіншісінен мұраға алу","Бір әдістің бірнеше нұсқасы","Объектіні басқа типке айналдыру","Класс ішіндегі барлық нәрсені public ету"],"a":"Деректерді жасыру және тек әдістер арқылы қол жеткізу"},{"q":"getter әдісінің аты қалай басталады?","o":["get + ӨрісАты (мысалы getName())","set + ӨрісАты","show + ӨрісАты","read + ӨрісАты","print + ӨрісАты"],"a":"get + ӨрісАты (мысалы getName())"},{"q":"this кілт сөзі нені білдіреді?","o":["Ағымдағы объектіні сілтейді","Ата-аналық класты сілтейді","Статикалық әдісті сілтейді","Жаңа объект құрады","Класс атын сілтейді"],"a":"Ағымдағы объектіні сілтейді"},{"q":"Конструктордың аты қалай болуы керек?","o":["Класс атымен бірдей болуы керек","main болуы керек","createObject болуы керек","newObject болуы керек","Кез келген ат қоюға болады"],"a":"Класс атымен бірдей болуы керек"},{"q":"Бір класста бірнеше конструктор бола ма?","o":["Иә, конструкторларды overload етуге болады","Жоқ, тек бір конструктор болады","Тек параметрсіз конструктор болады","Тек параметрлі конструктор болады","Тек копиялау конструкторы болады"],"a":"Иә, конструкторларды overload етуге болады"},{"q":"Объектіні инициализациялаудың дұрыс реті","o":["өрістер → конструктор денесі","конструктор денесі → өрістер","main әдісі → өрістер","статикалық блок → өрістер","finalize → өрістер"],"a":"өрістер → конструктор денесі"},{"q":"Класс ішіндегі әдістер қалай аталады?","o":["объектінің мінез-құлқы (behavior)","объектінің күйі (state)","объектінің идентификаторы","объектінің мұрагері","объектінің пакеті"],"a":"объектінің мінез-құлқы (behavior)"},{"q":"NetBeans-те класс құру қадамы","o":["File → New File → Java Class","Run → New Project","Tools → Create Class","Debug → New Class","Window → New Class"],"a":"File → New File → Java Class"},{"q":"Java-да бір класты екіншісінен мұрагер ету үшін қандай кілт сөз қолданылады?","o":["extends","implements","inherits","super","include"],"a":"extends"},{"q":"Мұрагерлікті беретін класс қалай аталады?","o":["Ата-аналық класс (суперкласс)","Балалық класс (подкласс)","Интерфейс","Абстрактілі класс","Финалдық класс"],"a":"Ата-аналық класс (суперкласс)"},{"q":"Мұрагерлікті алатын класс қалай аталады?","o":["Балалық класс (подкласс)","Ата-аналық класс","Бас класс","Негізгі класс","Түбірлік класс"],"a":"Балалық класс (подкласс)"},{"q":"Объект құруға тыйым салады, бірақ мұрагерлікке рұқсат етеді","o":["abstract","final","static","private","protected"],"a":"abstract"},{"q":"Java-да бір класс бірнеше кластан мұрагерлік ала ала ма?","o":["Жоқ, тек бір кластан ғана","Иә, шексіз","Иә, бірақ implements арқылы","Иә, тек интерфейстерден","Иә, егер олар final болса"],"a":"Жоқ, тек бір кластан ғана"},{"q":"Көп өлшемді массивтің әдепкі мәні не?","o":["0 (нөл)","null","false","0.0","бос жол \"\""],"a":"0 (нөл)"},{"q":"Екі жол тең бе тексеру","o":["equals()","==","compare()","same()","isEqual()"],"a":"equals()"},{"q":"Интерфейстің әдісін қайта анықтамасақ","o":["default нұсқасы орындалады (егер бар болса)","Компиляция қатесі","Абстрактілі әдіс ретінде қалады","Object класынан алынады","Ештеңе орындалмайды"],"a":"default нұсқасы орындалады (егер бар болса)"},{"q":"Маркерлік интерфейс деген не?","o":["Ешқандай әдісі жоқ интерфейс (мысалы Serializable)","Тек default әдістері бар интерфейс","Тек private әдістері бар интерфейс","Тек статикалық әдістері бар","Тек абстрактілі әдістері бар"],"a":"Ешқандай әдісі жоқ интерфейс (мысалы Serializable)"},{"q":"Функционалдық интерфейс деген не?","o":["Дәл бір абстрактілі әдісі бар интерфейс","Бірнеше default әдісі бар интерфейс","Ешқандай әдісі жоқ интерфейс","Тек статикалық әдістері бар интерфейс","Конструкторы бар интерфейс"],"a":"Дәл бір абстрактілі әдісі бар интерфейс"},{"q":"@FunctionalInterface аннотациясы не үшін қажет?","o":["Компиляторға бір ғана абстрактілі әдіс бар екенін тексерту үшін","Лямбда өрнектерін жазу үшін","default әдістерді жасыру үшін","Интерфейсті финалдық ету үшін","Интерфейсті абстрактілі ету үшін"],"a":"Компиляторға бір ғана абстрактілі әдіс бар екенін тексерту үшін"},{"q":"Интерфейстің константасы қалай жарияланады?","o":["public static final (автоматты түрде)","private int x","protected String s","default double d","void const"],"a":"public static final (автоматты түрде)"},{"q":"Абстрактілі класс пен қарапайым кластың айырмашылығы","o":["Абстрактілі класта абстрактілі әдістер болуы мүмкін","Қарапайым класта конструктор болмайды","Абстрактілі класта өрістер болмайды","Қарапайым класта мұрагерлік болмайды","Абстрактілі класта final әдістер болмайды"],"a":"Абстрактілі класта абстрактілі әдістер болуы мүмкін"},{"q":"Java-да қателерді өңдеу үшін негізгі конструкция","o":["try-catch-finally","if-else","switch-case","while-catch","do-finally"],"a":"try-catch-finally"},{"q":"try блогының ішіне не жазылады?","o":["Қате шығуы мүмкін код","Әрқашан орындалатын код","Қате шыққан кездегі код","Программаны тоқтататын код","Қате жоқ кездегі код"],"a":"Қате шығуы мүмкін код"},{"q":"catch блогы не істейді?","o":["Белгілі бір ерекшелікті ұстап алып өңдейді","Кодты қайта орындайды","Программаны тоқтатады","Қатені елемейді","finally блогын орындайды"],"a":"Белгілі бір ерекшелікті ұстап алып өңдейді"},{"q":"finally блогы қашан орындалады?","o":["Әрқашан (қате шықса да, шықпаса да)","Тек қате шықпағанда","Тек қате шыққанда","Ешқашан","Тек return болғанда"],"a":"Әрқашан (қате шықса да, шықпаса да)"},{"q":"Ерекшелікті қолмен лақтыру үшін қандай кілт сөз қолданылады?","o":["throw","throws","catch","try","finally"],"a":"throw"},{"q":"Әдіс ерекшелік лақтыруы мүмкін екенін көрсету үшін","o":["throws ЕрекшелікАты","throw ЕрекшелікАты","catch ЕрекшелікАты","try ЕрекшелікАты","finally ЕрекшелікАты"],"a":"throws ЕрекшелікАты"},{"q":"Барлық ерекшеліктердің түпкі ата-анасы","o":["Throwable","Exception","Error","RuntimeException","Object"],"a":"Throwable"},{"q":"Тексерілетін (checked) ерекшеліктер қай кластан мұра алады?","o":["Exception (RuntimeException емес)","Error","Throwable","RuntimeException","Object"],"a":"Exception (RuntimeException емес)"},{"q":"Тексерілмейтін (unchecked ерекшеліктер","o":["RuntimeException және оның балалары","Exception","IOException","SQLException","ClassNotFoundException"],"a":"RuntimeException және оның балалары"},{"q":"NullPointerException қай түрге жатады?","o":["RuntimeException (unchecked)","Checked Exception","Error","Throwable","Checked Runtime"],"a":"RuntimeException (unchecked)"},{"q":"Бір try блогына бірнеше catch бола ма?","o":["Иә, multi-catch Java 7-ден бастап","Жоқ, тек бір catch","Тек finally болады","Тек throws болады","Тек try болады"],"a":"Иә, multi-catch Java 7-ден бастап"},{"q":"Java 7-ден бастап бір catch-та бірнеше ерекшелікті ұстау","o":["catch (Exception1 | Exception2 e)","catch (Exception1, Exception2 e)","catch (Exception1 and Exception2 e)","catch (Exception1 + Exception2 e)","catch (Exception1; Exception2 e)"],"a":"catch (Exception1 | Exception2 e)"},{"q":"try-with-resources деген не?","o":["AutoCloseable ресурстарды автоматты жабатын конструкция","try-catch-finally","throws қолдану","throw қолдану","finally блогы"],"a":"AutoCloseable ресурстарды автоматты жабатын конструкция"},{"q":"try-with-resources синтаксисі","o":["try (Resource r = new Resource()) { }","try Resource r = new Resource() { }","try-with (Resource r) { }","try (new Resource()) { }","try Resource r { }"],"a":"try (Resource r = new Resource()) { }"},{"q":"Өзіміздің ерекшелігімізді қалай жасаймыз?","o":["Exception немесе RuntimeException-нан мұрагерлік алу","Throwable-дан тікелей мұрагерлік","Error-дан мұрагерлік","Object-тан мұрагерлік","Interface-тен implements"],"a":"Exception немесе RuntimeException-нан мұрагерлік алу"},{"q":"return finally блогында болса, не қайтарады?","o":["finally-дағы return мәнін қайтарады","try-дағы return мәнін қайтарады","Ештеңе қайтармайды","null қайтарады","Exception лақтырады"],"a":"finally-дағы return мәнін қайтарады"},{"q":"System.exit(0) finally блогын тоқтата ма?","o":["Иә, finally орындалмайды","Жоқ, finally әрқашан орындалады","Тек қате шыққанда","Тек try ішінде","Тек catch ішінде"],"a":"Иә, finally орындалмайды"},{"q":"throw және throws айырмашылығы","o":["throw – ерекшелікті лақтырады, throws – әдіс лақтыруы мүмкін екенін көрсетеді","throw – әдіс декларациясында, throws – код ішінде","throw – checked, throws – unchecked","throw – RuntimeException, throws – Exception","Ешқандай айырмашылық жоқ"],"a":"throw – ерекшелікті лақтырады, throws – әдіс лақтыруы мүмкін екенін көрсетеді"},{"q":"Java-дағы коллекциялардың негізгі интерфейсі","o":["Collection","List","Set","Map","Iterator"],"a":"Collection"},{"q":"Динамикалық массивті іске асыратын класс","o":["ArrayList","LinkedList","HashSet","TreeSet","HashMap"],"a":"ArrayList"},{"q":"ArrayList ішкі құрылымы бойынша","o":["динамикалық массив (Object[])","байланысты тізім","хэш-таблица","қос байланысты тізім","ағаш"],"a":"динамикалық массив (Object[])"},{"q":"Қай коллекция қайталанатын элементтерге рұқсат бермейді?","o":["HashSet","ArrayList","LinkedList","Vector","Stack"],"a":"HashSet"},{"q":"Кілт-мағына (key-value) жұбын сақтайтын интерфейс","o":["Map","List","Set","Collection","Queue"],"a":"Map"},{"q":"Ең жиі қолданылатын Map реализациясы","o":["HashMap","TreeMap","LinkedHashMap","Hashtable","Properties"],"a":"HashMap"},{"q":"HashMap-та кілттер қайталана ма?","o":["Жоқ, соңғы мән алдыңғысын алмастырады","Иә, бірнеше мән болады","Иә, бірақ List ішінде","Иә, егер HashSet қолдансақ","Иә, егер synchronized болса"],"a":"Жоқ, соңғы мән алдыңғысын алмастырады"},{"q":"Коллекция элементтерін рет-ретімен аралау үшін қолданылады","o":["Iterator","for-each","ListIterator","Enumerator","Stream"],"a":"Iterator"},{"q":"Iterator арқылы элементті жоюға бола ма?","o":["Иә, iterator.remove() арқылы","Жоқ, тек оқуға болады","Тек add() арқылы","Тек set() арқылы","Тек clear() арқылы"],"a":"Иә, iterator.remove() арқылы"},{"q":"ListIterator қосымша не істей алады?","o":["Кері бағытта жүру және элемент қосу/өзгерту","Тек алға жүру","Тек жою","Тек оқу","Тек қосу"],"a":"Кері бағытта жүру және элемент қосу/өзгерту"},{"q":"for-each циклы ішінде коллекциядан элементті жоюға бола ма?","o":["Жоқ, ConcurrentModificationException шығады","Иә, әрқашан","Иә, егер synchronized болса","Иә, Iterator арқылы","Иә, Stream арқылы"],"a":"Жоқ, ConcurrentModificationException шығады"},{"q":"HashSet элементтерді қалай сақтайды?","o":["HashMap-тың кілті ретінде","ArrayList ішінде","LinkedList ішінде","Tree ішінде","Queue ішінде"],"a":"HashMap-тың кілті ретінде"},{"q":"ArrayList-тің бастапқы сыйымдылығы (capacity)","o":["10","16","8","0","100"],"a":"10"},{"q":"HashMap-тің бастапқы сыйымдылығы","o":["16","10","8","32","64"],"a":"16"},{"q":"Load factor деген не?","o":["HashMap/HashSet толғанда қайта хэштеу жүргізілетін коэффициент (әдепкі 0.75)","Элементтер саны","Кілттер саны","Bucket саны","Memory usage"],"a":"HashMap/HashSet толғанда қайта хэштеу жүргізілетін коэффициент (әдепкі 0.75)"},{"q":"Коллекцияны синхрондау үшін қандай әдіс қолданылады?","o":["Collections.synchronizedList/Set/Map()","synchronized keyword","ReentrantLock","Vector/Hashtable","ConcurrentHashMap"],"a":"Collections.synchronizedList/Set/Map()"},{"q":"HashMap null кілтке рұқсат бере ме?","o":["Иә, тек бір null кілт","Жоқ, ешқашан","Иә, бірнеше null кілт","Тек synchronized болса","Тек LinkedHashMap-та"],"a":"Иә, тек бір null кілт"},{"q":"LinkedHashMap не сақтайды?","o":["Енгізу реті немесе қолдану реті","Сұрыпталған күй","Тек хэш-код","Тек кілттерді","Тек мәндерді"],"a":"Енгізу реті немесе қолдану реті"},{"q":"Java-да файлды немесе каталогты білдіретін негізгі класс","o":["File","Path","Files","FileSystem","Directory"],"a":"File"},{"q":"Файлдың бар-жоғын тексеру әдісі","o":["file.exists()","file.isFile()","file.canRead()","file.length() > 0","file.isDirectory()"],"a":"file.exists()"},{"q":"Мәтіндік файлды жол-жол оқудың ең қарапайым тәсілі","o":["Scanner","BufferedReader","FileReader","InputStream","DataInputStream"],"a":"Scanner"},{"q":"Файлға мәтін жазудың ең қарапайым тәсілі","o":["PrintWriter","BufferedWriter","FileWriter","OutputStream","DataOutputStream"],"a":"PrintWriter"},{"q":"Файлдан Scanner құрудың дұрыс жолы","o":["new Scanner(new File(\"data.txt\"))","new Scanner(\"data.txt\")","Scanner.open(\"data.txt\")","new Scanner(File(\"data.txt\"))","Scanner.readFile(\"data.txt\")"],"a":"new Scanner(new File(\"data.txt\"))"},{"q":"PrintWriter-ды файлға жазу үшін құру","o":["new PrintWriter(\"data.txt\")","new PrintWriter(new FileWriter(\"data.txt\"))","PrintWriter.open(\"data.txt\")","new PrintWriter(new BufferedWriter(\"data.txt\"))","PrintWriter.create(\"data.txt\")"],"a":"new PrintWriter(\"data.txt\")"},{"q":"Файлды жабу әдісі","o":["close()","flush()","finish()","end()","dispose()"],"a":"close()"},{"q":"Деректердің дискіге толық жазылғанын қамтамасыз ету","o":["flush()","close()","commit()","sync()","write()"],"a":"flush()"},{"q":"try-with-resources не істейді?","o":["AutoCloseable интерфейсін іске асырған ресурстарды автоматты жабады","Тек flush() жасайды","close()-ты қолмен шақыру керек","Ештеңе істемейді","Тек finalize() шақырады"],"a":"AutoCloseable интерфейсін іске асырған ресурстарды автоматты жабады"},{"q":"Java 11+ бүкіл файлды бір жолға оқу","o":["Files.readString(Path.of(\"file.txt\"))","Files.readAllLines()","Files.lines()","new String(Files.readAllBytes(path))","Scanner.useDelimiter(\"\\\\Z\").next()"],"a":"Files.readString(Path.of(\"file.txt\"))"},{"q":"Java 11+ бір жолды файлға бір командамен жазу","o":["Files.writeString(Path.of(\"file.txt\"), \"Сәлем\")","Files.write(Path, str.getBytes())","new PrintWriter(path).print(str)","Files.createFile(path)","Files.copy()"],"a":"Files.writeString(Path.of(\"file.txt\"), \"Сәлем\")"},{"q":"Scanner-дан бүтін санды оқу әдісі","o":["nextInt()","next()","nextLine()","readInt()","parseInt()"],"a":"nextInt()"},{"q":"Файлда дерек бітсе, Scanner","o":["hasNext() → false, next() → NoSuchElementException","hasNext() → true","next() → null","next() → бос жол","автоматты түрде жабылады"],"a":"hasNext() → false, next() → NoSuchElementException"},{"q":"PrintWriter-дың println() әдісі","o":["жол соңына \\n қосады және flush() жасайды","Тек \\n қосады","Тек flush() жасайды","Ештеңе қоспайды","Файлды жабады"],"a":"жол соңына \\n қосады және flush() жасайды"},{"q":"Бар файлдың соңына қосу үшін","o":["new PrintWriter(new FileWriter(\"file.txt\", true))","new PrintWriter(\"file.txt\", \"append\")","new PrintWriter(\">> file.txt\")","new PrintWriter(new File(\"file.txt\"), true)","PrintWriter.append(\"file.txt\")"],"a":"new PrintWriter(new FileWriter(\"file.txt\", true))"},{"q":"File.separator деген не?","o":["ОЖ-ға байланысты жол бөлгіш (\\ немесе /)","Жол бөлгіш","Параметр бөлгіш","Үтірмен нүкте","Қос нүкте"],"a":"ОЖ-ға байланысты жол бөлгіш (\\ немесе /)"},{"q":"Уақытша файл құру","o":["Files.createTempFile() немесе File.createTempFile()","new File(\"temp\")","new TempFile()","Files.createFile(\"temp\")","File.temp()"],"a":"Files.createTempFile() немесе File.createTempFile()"},{"q":"Барлық ішкі каталогтарды рекурсивті құру","o":["file.mkdirs() немесе Files.createDirectories(path)","file.mkdir()","file.createPath()","file.makeDirectory()","file.createFolder()"],"a":"file.mkdirs() немесе Files.createDirectories(path)"},{"q":"AWT толық атауы қалай?","o":["Abstract Window Toolkit","Advanced Window Toolkit","Automatic Window Toolkit","Application Window Tools","Android Window Toolkit"],"a":"Abstract Window Toolkit"},{"q":"AWT компоненттері қай пакетте орналасқан?","o":["java.awt","javax.swing","java.swing","java.gui","java.desktop"],"a":"java.awt"},{"q":"AWT-та қарапайым терезе құру үшін қай класты мұрагерлік аламыз?","o":["Frame","JFrame","Window","Panel","Dialog"],"a":"Frame"},{"q":"Терезені экранда көрсету үшін қандай әдісті шақырамыз?","o":["setVisible(true)","show()","display()","open()","setShown(true)"],"a":"setVisible(true)"},{"q":"Терезені жабу түймесін басқанда не істеу керек екенін айту үшін қандай listener қосамыз?","o":["WindowListener","ActionListener","MouseListener","KeyListener","ClickListener"],"a":"WindowListener"},{"q":"Терезе жабылғанда программаны тоқтату үшін қай әдісті іске асырамыз?","o":["windowClosing","windowClosed","windowOpened","windowActivated","windowHidden"],"a":"windowClosing"},{"q":"Программаны толық тоқтату үшін қандай әдісті шақырамыз?","o":["System.exit(0)","System.stop()","System.close()","System.end()","System.finish()"],"a":"System.exit(0)"},{"q":"Графиканы (сызық, шеңбер т.б.) салу үшін қай әдісті қайта анықтаймыз?","o":["paint(Graphics g)","draw(Graphics g)","render()","update()","display()"],"a":"paint(Graphics g)"},{"q":"Графика объектісінің типі қандай?","o":["Graphics","Graphics2D","Image","Canvas","Paint"],"a":"Graphics"},{"q":"Түзу сызық сызу командасы","o":["g.drawLine(x1,y1,x2,y2)","g.line(x1,y1,x2,y2)","g.draw(x1,y1,x2,y2)","g.stroke(x1,y1,x2,y2)","g.paintLine()"],"a":"g.drawLine(x1,y1,x2,y2)"},{"q":"Тіктөртбұрыш сызу","o":["g.drawRect(x,y,width,height)","g.rectangle()","g.drawRectangle()","g.rect()","g.box()"],"a":"g.drawRect(x,y,width,height)"},{"q":"Толтырылған тіктөртбұрыш сызу","o":["g.fillRect(x,y,width,height)","g.drawRect()","g.solidRect()","g.paintRect()","g.rectFill()"],"a":"g.fillRect(x,y,width,height)"},{"q":"Шеңбер сызу","o":["g.drawOval(x,y,d,e)","g.circle()","g.drawCircle()","g.ellipse()","g.round()"],"a":"g.drawOval(x,y,d,e)"},{"q":"Мәтінді экранға шығару","o":["g.drawString(\"Сәлем\", x, y)","g.print()","g.write()","g.text()","g.showText()"],"a":"g.drawString(\"Сәлем\", x, y)"},{"q":"Түсті өзгерту","o":["g.setColor(Color.RED)","g.color = Color.RED","g.changeColor()","g.paintColor()","g.setPaint()"],"a":"g.setColor(Color.RED)"},{"q":"Қаріпті (шрифт) өзгерту","o":["g.setFont(new Font(\"Arial\", Font.BOLD, 20))","g.font = new Font()","g.changeFont()","g.textFont()","g.setTextStyle()"],"a":"g.setFont(new Font(\"Arial\", Font.BOLD, 20))"},{"q":"AWT-та қарапайым кнопка құру","o":["Button b = new Button(\"Басыңыз\")","JButton b = new JButton()","new Btn()","new PushButton()","new ClickButton()"],"a":"Button b = new Button(\"Басыңыз\")"},{"q":"Кнопканы терезеге қосу","o":["add()","addButton()","insert()","put()","attach()"],"a":"add()"},{"q":"Терезенің өлшемін орнату","o":["setSize(500, 400)","setDimension()","resize()","setWidthHeight()","dimension()"],"a":"setSize(500, 400)"},{"q":"Терезенің атауын (тақырыбын) қою","o":["setTitle(\"Менің терезем\")","setName()","setHeader()","title()","caption()"],"a":"setTitle(\"Менің терезем\")"},{"q":"Swing компоненттері қай пакетте орналасқан?","o":["javax.swing","java.awt","java.swing","javax.awt","java.gui"],"a":"javax.swing"},{"q":"Swing-те негізгі терезе класы","o":["JFrame","Frame","Window","JWindow","ApplicationWindow"],"a":"JFrame"},{"q":"Swing терезесін қалай құрамыз?","o":["JFrame frame = new JFrame();","Frame frame = new Frame();","new Window();","SwingFrame frame = new SwingFrame();","new JWindow();"],"a":"JFrame frame = new JFrame();"},{"q":"Терезені экранда көрсету үшін","o":["frame.setVisible(true);","frame.show();","frame.display();","frame.open();","frame.setShown(true);"],"a":"frame.setVisible(true);"},{"q":"Терезенің тақырыбын қою","o":["frame.setTitle(\"Менің терезем\");","frame.setName(\"Менің терезем\");","frame.setHeader();","frame.title(\"Менің терезем\");","frame.caption();"],"a":"frame.setTitle(\"Менің терезем\");"},{"q":"Терезенің өлшемін орнату","o":["frame.setSize(800, 600);","frame.size(800, 600);","frame.dimension();","frame.resize();","frame.setBounds();"],"a":"frame.setSize(800, 600);"},{"q":"Swing-те кнопка қай класпен құрылады?","o":["JButton","Button","JBtn","PushButton","ClickButton"],"a":"JButton"},{"q":"«Басыңыз» деп жазылған кнопканы қалай құрамыз?","o":["JButton btn = new JButton(\"Басыңыз\");","Button btn = new Button(\"Басыңыз\");","new JButton(\"text\");","JButton btn = new Button();","new JBtn(\"Басыңыз\");"],"a":"JButton btn = new JButton(\"Басыңыз\");"},{"q":"Өзгертуге болмайтын мәтін (жазу) қай компонентпен құрылады?","o":["JLabel","JText","Label","JTitle","TextLabel"],"a":"JLabel"},{"q":"«Сәлем, әлем!» деген жазуды қалай құрамыз?","o":["JLabel label = new JLabel(\"Сәлем, әлем!\");","new Label(\"Сәлем, әлем!\");","JLabel label = new Label();","new JText(\"Сәлем, әлем!\");","JLabel label = new TextLabel();"],"a":"JLabel label = new JLabel(\"Сәлем, әлем!\");"},{"q":"Компонентті (кнопка, жазу) терезеге қосу","o":["frame.getContentPane().add(компонент);","frame.add(компонент);","frame.insert(компонент);","frame.put(компонент);","frame.attach(компонент);"],"a":"frame.getContentPane().add(компонент);"},{"q":"Терезені жапқанда программа жабылсын десек, қоямыз","o":["setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);","setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);","setCloseOperation(EXIT);","setExitOnClose(true);","System.exit(0);"],"a":"setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);"},{"q":"Ең қарапайым орналастыру менеджері (компоненттер бір-бірінің үстінде)","o":["FlowLayout","BorderLayout","GridLayout","BoxLayout","CardLayout"],"a":"FlowLayout"},{"q":"JFrame-те әдепкі орналастыру менеджері","o":["BorderLayout","FlowLayout","GridLayout","Null layout","AbsoluteLayout"],"a":"BorderLayout"},{"q":"Компоненттер солдан оңға, жолмен орналассын десек","o":["setLayout(new FlowLayout());","setLayout(new BorderLayout());","setLayout(new GridLayout());","setLayout(null);","setLayout(new BoxLayout());"],"a":"setLayout(new FlowLayout());"},{"q":"Кнопканы басқандағы әрекетті тыңдау үшін қосамыз","o":["ActionListener","MouseListener","ClickListener","ButtonListener","KeyListener"],"a":"ActionListener"},{"q":"Кнопкаға ActionListener қалай қосамыз?","o":["btn.addActionListener(e -> { ... });","btn.addListener();","btn.setOnClick();","btn.action();","btn.click();"],"a":"btn.addActionListener(e -> { ... });"},{"q":"Терезе экранның ортасында ашылсын десек <v ariant> frame.setLocation(0,0);","o":["frame.setLocationRelativeTo(null);","frame.setCenter(true);","frame.center();","frame.toCenter();"],"a":"frame.setLocationRelativeTo(null);"},{"q":"Swing бағдарламасын дұрыс іске қосудың ұсынылатын тәсілі","o":["SwingUtilities.invokeLater(() -> { new MyFrame().setVisible(true); });","тікелей main-де new MyFrame().setVisible(true);","Runtime.getRuntime().exec();","Thread.start();","конструкторда тікелей"],"a":"SwingUtilities.invokeLater(() -> { new MyFrame().setVisible(true); });"},{"q":"JLabel мәтінін ортаға туралау","o":["label.setHorizontalAlignment(JLabel.CENTER);","label.setAlignment(CENTER);","label.center();","label.setTextAlign(\"center\");","label.alignCenter();"],"a":"label.setHorizontalAlignment(JLabel.CENTER);"},{"q":"for-each циклы қай коллекциялармен жұмыс істейді","o":["Массивтер және Iterable интерфейсі","Тек массивтермен ғана жұмыс істейді","Тек List ғана қолдайды","Тек Set ғана қолдайды","Тек Map ғана қолдайды"],"a":"Массивтер және Iterable интерфейсі"},{"q":"Шексіз цикл жазудың дұрыс тәсілі","o":["for(;;) немесе while(true)","for(:) немесе while(false)","do{} немесе while(null)","repeat() немесе until(true)","loop() немесе end(false)"],"a":"for(;;) немесе while(true)"},{"q":"switch-те default тармағы қай жерде болуы мүмкін","o":["Кез келген жерде, бірақ соңында ұсынылады","Міндетті түрде бірінші болуы керек","Міндетті түрде ортада болуы керек","Ешқашан жазуға болмайды","Тек бірінші case-тен кейін"],"a":"Кез келген жерде, бірақ соңында ұсынылады"},{"q":"Мына код не шығарады: int x = 0; for (int i = 0; i< 3; i++) { x++; if (i == 1) continue; x++; } System.out.println(x);","o":["5 шығарады (x=5)","6 шығарады (x=6)","4 шығарады (x=4)","3 шығарады (x=3)","7 шығарады (x=7)"],"a":"5 шығарады (x=5)"},{"q":"Меткамен break қолданғанда outer: for(int i=0; i<3; i++) { for(int j=0; j<3; j++) { if(j==1) break outer; System.out.print(j); } }","o":["Тек 0 басып шығарады","012 басып шығарады","010101 басып шығарады","Ешнәрсе басып шығармайды","012012 басып шығарады"],"a":"Тек 0 басып шығарады"},{"q":"switch expression нәтижесін сақтау String day = \"MON\"; int num = switch(day) { case \"MON\",\"TUE\" -> 1; case \"WED\" -> 2; default -> 0; };","o":["num = 1 мәнін алады","num = 2 мәнін алады","num = 0 мәнін алады","Компиляция қатесі болады","NullPointerException шығады"],"a":"num = 1 мәнін алады"},{"q":"Екі массивті салыстыру үшін","o":["Arrays.equals(arr1, arr2) қолданылады","arr1 == arr2 қолданылады","arr1.equals(arr2) қолданылады","Arrays.compare(arr1, arr2) қолданылады","arr1.compareTo(arr2) қолданылады"],"a":"Arrays.equals(arr1, arr2) қолданылады"},{"q":"Массивтің типі қандай болып саналады","o":["Сілтемелі тип (reference type)","Примитивті тип (primitive type)","Жай тип (simple type)","Негізгі тип (base type)","Қарапайым тип (basic type)"],"a":"Сілтемелі тип (reference type)"},{"q":"null мәні бар массивті қолданғанда","o":["NullPointerException шығуы мүмкін","ArrayIndexOutOfBoundsException шығады","ClassCastException шығуы мүмкін","IllegalArgumentException шығады","RuntimeException ешқашан шықпайды"],"a":"NullPointerException шығуы мүмкін"},{"q":"for-each циклы массивпен қалай жұмыс істейді","o":["Әр элементті рет-ретімен оқиды","Индексі бойынша кері оқиды","Тек бірінші элементті оқиды","Тек соңғы элементті оқиды","Кездейсоқ элементті оқиды"],"a":"Әр элементті рет-ретімен оқиды"},{"q":"Массивті көшіру үшін дұрыс әдіс","o":["Arrays.copyOf() немесе System.arraycopy()","arr.clone() немесе arr.copy()","arr.duplicate() немесе arr.replicate()","Arrays.clone() немесе arr.deepCopy()","arr.transfer() немесе arr.move()"],"a":"Arrays.copyOf() немесе System.arraycopy()"},{"q":"Массивтің әдепкі мәндері (default values)","o":["Сандық типтер – 0, boolean – false","Барлық типтер – null мәні","Барлық типтер – 1 мәні","Барлық типтер – true мәні","Барлық типтер – -1 мәні"],"a":"Сандық типтер – 0, boolean – false"},{"q":"Бір өлшемді массивтің жадта орналасуы","o":["Үздіксіз (contiguous) жадта сақталады","Бөлшек-бөлшек жадта сақталады","Файлда ғана сақталады","Стекте ғана сақталады","Регистрде ғана сақталады"],"a":"Үздіксіз (contiguous) жадта сақталады"},{"q":"Массивтің индексі шектеуден шыққанда","o":["ArrayIndexOutOfBoundsException шығады","IndexOutOfRangeException шығады","NullPointerException шығады","IllegalArgumentException шығады","NoSuchElementException шығады"],"a":"ArrayIndexOutOfBoundsException шығады"},{"q":"Массивтің өлшемін құру кезінде ғана анықтау","o":["new int[өлшем] түрінде беріледі","new int{өлшем} түрінде беріледі","int[өлшем] new түрінде беріледі","array(өлшем) new түрінде беріледі","create(өлшем) int түрінде беріледі"],"a":"new int[өлшем] түрінде беріледі"},{"q":"Мына код не шығарады: ```java int[] a = {1,2,3}; int[] b = a; b[0] = 99; System.out.println(a[0]); ```","o":["99 шығарады (массивтер сілтемемен беріледі)","1 шығарады (көшірме жасалады)","0 шығарады (әдепкі мән)","NullPointerException","ArrayIndexOutOfBoundsException"],"a":"99 шығарады (массивтер сілтемемен беріледі)"},{"q":"Arrays.copyOf() және clone() айырмашылығы","o":["copyOf жаңа өлшем қабылдай алады, clone жоқ","clone жаңа өлшем қабылдай алады, copyOf жоқ","copyOf тек примитивтерге, clone объекттерге","clone тек объекттерге, copyOf примитивтерге","Екеуі де бірдей жұмыс істейді"],"a":"copyOf жаңа өлшем қабылдай алады, clone жоқ"},{"q":"Мына кодтың нәтижесі: ```java int[] src = {10,20,30,40,50}; int[] dst = new int[3]; System.arraycopy(src, 1, dst, 0, 3); System.out.println(Arrays.toString(dst)); ```","o":["[20, 30, 40] массиві шығады","[10, 20, 30] массиві шығады","[30, 40, 50] массиві шығады","[10, 20, 30, 40, 50] массиві","[0, 0, 0] массиві шығады"],"a":"[20, 30, 40] массиві шығады"},{"q":"Екі өлшемді массивтің жолдарының санын қайтады","o":["arr.length","arr[0].length","arr.size()","arr.rows","arr.columns"],"a":"arr.length"},{"q":"Тікбұрышты емес (jagged массив деген не?","o":["Әр жолдың ұзындығы әртүрлі болатын массив","Барлық жолдың ұзындығы бірдей массив","Тек бір өлшемді массив","Үш өлшемді массив","Объектілер массиві"],"a":"Әр жолдың ұзындығы әртүрлі болатын массив"},{"q":"Үш өлшемді массив қалай жариялайды?","o":["int[][][] arr = new int[2][3][4];","int arr[2][3][4];","int[][] arr = new int[2][3][4];","int arr[][][] = new int[2,3,4];","int[2][3][4] arr;"],"a":"int[][][] arr = new int[2][3][4];"},{"q":"Көп өлшемді массивті инициализациялаудың қысқа жолы","o":["int[][] arr = {{1,2},{3,4},{5,6}};","int[][] arr = new int[]{1,2},{3,4};","int[][] arr = new int[3][2] {1,2,3,4,5,6};","int arr[][] = int{{1,2},{3,4}};","int[][] arr = new int[][] {{1,2},{3,4}};"],"a":"int[][] arr = {{1,2},{3,4},{5,6}};"},{"q":"Екі өлшемді массивті толтыру үшін қандай цикл қолданылады?","o":["Екі ішкі for циклы","Бір ғана for циклы","while циклы","do-while циклы","for-each циклы жеткілікті"],"a":"Екі ішкі for циклы"},{"q":"for-each арқылы екі өлшемді массивті қалай шығарамыз?","o":["for(int[] row : arr) for(int x : row) System.out.print(x+\" \");","for(int x : arr) System.out.print(x);","for(int i=0; i<arr.length; i++) for(int x : arr[i])","for(int row : arr) for(int col : arr[row])","for(int i : arr[][])"],"a":"for(int[] row : arr) for(int x : row) System.out.print(x+\" \");"},{"q":"int[][][] arr = new int[3][4][5]; болса, жалпы неше элемент бар?","o":["60","12","15","20","3"],"a":"60"},{"q":"Тікбұрышты емес массив құру мысалы","o":["int[][] arr = {{1,2,3},{4,5},{6}};","int[][] arr = new int[3][3];","int[][] arr = new int[3][]; arr[0]=new int[3];","int[][] arr = new int[][3];","int arr[][] = int[3][3];"],"a":"int[][] arr = {{1,2,3},{4,5},{6}};"},{"q":"Көп өлшемді массивтің өлшемдер санын қалай анықтаймыз?","o":["arr.length, arr[0].length, arr[0][0].length т.б.","arr.dimension()","arr.size()","arr.getDimension()","arr.length() әрқашан"],"a":"arr.length, arr[0].length, arr[0][0].length т.б."},{"q":"Көп өлшемді массивтің әрбір жолын бөлек инициализациялау","o":["arr[0] = new int[]{1,2,3}; arr[1] = new int[]{4,5};","arr[0] = {1,2,3};","arr[0][] = new int[]{1,2,3};","arr[0] = new int[3]{1,2,3};","arr[0] = int[]{1,2,3};"],"a":"arr[0] = new int[]{1,2,3}; arr[1] = new int[]{4,5};"},{"q":"Екі өлшемді массивтің диагональ элементтерін шығару үшін","o":["arr[i][i]","arr[i][j]","arr[i][arr.length-1-i]","arr[j][i]","arr[i][0]"],"a":"arr[i][i]"},{"q":"Көп өлшемді массивті параметр ретінде беру","o":["public static void print(int[][] arr)","public static void print(int[] arr)","public static void print(int arr)","public static void print(int[]... arr)","public static void print(int arr[][][])"],"a":"public static void print(int[][] arr)"},{"q":"Көп өлшемді массивтің жадыда қалай орналасады?","o":["Жолдар сілтемелер массиві, әр жол – жеке массив","Бір үздіксіз блокта","Стекте","Файлда","Регистрде"],"a":"Жолдар сілтемелер массиві, әр жол – жеке массив"},{"q":"Келесі код не шығарады? int[][] a = {{1},{2,3},{4,5,6}}; System.out.println(a[1].length);","o":["2","3","1","6","қате"],"a":"2"},{"q":"Келесі кодтың нәтижесі не болады? int[][][] x = new int[2][][]; x[0] = new int[3][]; x[0][1] = new int[]{10,20}; x[1] = new int[2][2]; System.out.println(x[0][1][1] + x[1][0].length);","o":["22","20","12","NullPointerException","ArrayIndexOutOfBoundsException"],"a":"22"},{"q":"Төрт өлшемді массивтің жалпы элементтер санын есептеу (өлшемдер: 2×3×4×5)","o":["2×3×4×5 = 120","2+3+4+5 = 14","2×3 + 4×5 = 26","4! = 24","120 + 14 = 134"],"a":"2×3×4×5 = 120"},{"q":"Жолдың басындағы және соңындағы бос орындарды алып тастау","o":["trim()","strip()","removeSpaces()","clean()","clear()"],"a":"trim()"},{"q":"Жолдан бөлік алу әдісі","o":["substring(beginIndex, endIndex)","substr(start, length)","cut(start, end)","slice(start, end)","getPart()"],"a":"substring(beginIndex, endIndex)"},{"q":"Символды немесе жолды табу әдісі","o":["indexOf()","find()","search()","locate()","position()"],"a":"indexOf()"},{"q":"Соңғы кездескен символдың индексін қайтарады","o":["lastIndexOf()","lastFind()","endIndexOf()","reverseIndex()","backIndex()"],"a":"lastIndexOf()"},{"q":"Жол бос па тексеру","o":["isEmpty()","isBlank()","empty()","nullOrEmpty()","hasLength()"],"a":"isEmpty()"},{"q":"Java 11-ден бастап тек бос орындардан тұра ма тексеру","o":["isBlank()","isEmpty()","isWhitespace()","onlySpaces()","hasOnlySpaces()"],"a":"isBlank()"},{"q":"Жолды char массивіне айналдыру","o":["toCharArray()","getChars()","chars()","toArray()","convertToChar()"],"a":"toCharArray()"},{"q":"Жолды бөлу (split) әдісі не қайтарады?","o":["String[] массив","List<String>","char[]","StringBuilder","Object[]"],"a":"String[] массив"},{"q":"Регистірді елемей салыстыру","o":["equalsIgnoreCase()","compareIgnoreCase()","sameIgnoreCase()","equalsNoCase()","ignoreCaseEquals()"],"a":"equalsIgnoreCase()"},{"q":"Жолдың басы осымен бастала ма тексеру","o":["startsWith()","beginsWith()","start()","prefix()","hasPrefix()"],"a":"startsWith()"},{"q":"Жолдың соңы осымен аяқтала ма тексеру","o":["endsWith()","finishWith()","suffix()","hasSuffix()","end()"],"a":"endsWith()"},{"q":"Келесі код не шығарады? String str = \"Programming\"; str = str.substring(3, 7).toLowerCase().concat(\"2025\"); System.out.println(str);","o":["gram2025","ming2025","GRAMM2025","rammi2025","NullPointerException"],"a":"gram2025"},{"q":"Келесі кодтың нәтижесі не болады? String a = \"hello\"; String b = new String(\"hello\"); String c = b.intern(); System.out.println(a == b ? \"1\" : \"\" + (a == c ? \"2\" : \"3\"));","o":["2","1","12","3","қате"],"a":"2"},{"q":"Java-да әдіс қалай жарияланады","o":["Қайтару типі, аты, параметрлер тізімі","Тек аты және параметрлер тізімі","Тек қайтару типі және аты","Тек параметрлер тізімі","Тек әдіс аты жеткілікті"],"a":"Қайтару типі, аты, параметрлер тізімі"},{"q":"Мәні жоқ әдістің қайтару типі","o":["void","null","empty","nothing","none"],"a":"void"},{"q":"Әдістің негізгі мақсаты","o":["Кодты қайта қолдану және оқуды жеңілдету","Кодты жылдамдату үшін","Жадты үнемдеу үшін","Интерфейсті әдемі ету үшін","Компиляцияны тездету үшін"],"a":"Кодты қайта қолдану және оқуды жеңілдету"},{"q":"Әдіске параметр қалай беріледі","o":["Жақша ішінде типі және аты жазылады","Жақша ішінде тек аты жазылады","Жақшадан тыс жазылады","return алдында жазылады","әдіс соңында жазылады"],"a":"Жақша ішінде типі және аты жазылады"},{"q":"Әдісті шақыру қалай жазылады","o":["әдісАты(параметрлер);","call әдісАты();","run әдісАты();","execute әдісАты();","start әдісАты();"],"a":"әдісАты(параметрлер);"},{"q":"Бір әдістің бірнеше нұсқасы болуы","o":["Overloading (шамадан тыс жүктеу)","Overriding (қайта анықтау)","Inheritance (мұрагерлік)","Polymorphism (полиморфизм)","Encapsulation (инкапсуляция)"],"a":"Overloading (шамадан тыс жүктеу)"},{"q":"Overloading қашан мүмкін болады","o":["Параметрлер саны немесе типі әртүрлі болғанда","Қайтару типі әртүрлі болғанда","Әдіс аты әртүрлі болғанда","Клас аты әртүрлі болғанда","Пакет аты әртүрлі болғанда"],"a":"Параметрлер саны немесе типі әртүрлі болғанда"},{"q":"Әдістің қолжетімділік модификаторы","o":["public, private, protected, default","open, closed, hidden, visible","global, local, internal, external","read, write, execute, delete","high, low, medium, none"],"a":"public, private, protected, default"},{"q":"static әдіс қалай шақырылады","o":["Класс аты арқылы шақырылады","Объект арқылы шақырылады","Конструктор арқылы шақырылады","super арқылы шақырылады","this арқылы шақырылады"],"a":"Класс аты арқылы шақырылады"},{"q":"Мына код не шығарады ```java public static int test(int x) { if (x<= 1) return 1; return x * test(x-1); } System.out.println(test(5)); ```","o":["120 (5! = 5×4×3×2×1)","15","10","5","StackOverflowError"],"a":"120 (5! = 5×4×3×2×1)"},{"q":"Overloading мысалы дұрыс қайсы","o":["void print(int x) және void print(double x)","void print(int x) және int print(int x)","void print(int x) және void Print(int x)","void print(int x) және void print(int y)","void print(int x) және void print(String x) дұрыс емес"],"a":"void print(int x) және void print(double x)"},{"q":"Мына код компиляцияланады ма ```java public static void main(String[] args) { System.out.println(sum(5)); } public static int sum(int n) { return n == 0 ? 0 : n + sum(n-1); } ```","o":["Иә, 15 шығарады (1+2+3+4+5)","Жоқ, рекурсия қатесі","Жоқ, return типі қате","Жоқ, параметр қате","Жоқ, main қате"],"a":"Иә, 15 шығарады (1+2+3+4+5)"},{"q":"Деректерді жасыру үшін қандай модификатор қолданылады?","o":["private","public","protected","static","final"],"a":"private"},{"q":"private өріске сырттан қалай қол жеткіземіз?","o":["getter және setter әдістері арқылы","Тікелей объект.өріс","super арқылы","this арқылы","static арқылы"],"a":"getter және setter әдістері арқылы"},{"q":"setter әдісінің аты қалай басталады?","o":["set + ӨрісАты (мысалы setName())","get + ӨрісАты","change + ӨрісАты","write + ӨрісАты","update + ӨрісАты"],"a":"set + ӨрісАты (мысалы setName())"},{"q":"Мына кодтың нәтижесі не болады? ```java class Test { private String s = \"Бастапқы\"; { s = \"Блок инициализация\"; } Test() { s = \"Конструктор\"; } public String getS() { return s; } } public class Main { public static void main(String[] args) { System.out.println(new Test().getS()); } } ```","o":["Конструктор","Блок инициализация","Бастапқы","null","қате"],"a":"Конструктор"},{"q":"Мына код компиляцияланады ма? ```java class A { private int x = 10; A() { this(5); x = 20; } A(int x) { this.x = x; } public int getX() { return x; } } public class Main { public static void main(String[] args) { System.out.println(new A().getX()); } } ```","o":["Иә, шығарады 5","Иә, шығарады 20","Иә, шығарады 10","Жоқ, рекурсия қатесі","Жоқ, this() бірінші болу керек"],"a":"Иә, шығарады 5"},{"q":"Ата-аналық кластың конструкторын шақыру үшін қандай кілт сөз қолданылады?","o":["super()","this()","parent()","base()","extends()"],"a":"super()"},{"q":"Ата-аналық кластың әдісін шақыру үшін не жазылады?","o":["super.әдісАты()","this.әдісАты()","parent.әдісАты()","base.әдісАты()","extends.әдісАты()"],"a":"super.әдісАты()"},{"q":"Балалық класта әдісті қайта анықтауды белгілеу үшін қандай аннотация қойылады?","o":["@Override","@Overload","@Inherited","@Super","@Extends"],"a":"@Override"},{"q":"Класстың мұрагерлікке жабық болуын қамтамасыз ететін модификатор","o":["final","private","static","abstract","protected"],"a":"final"},{"q":"Әдістің қайта анықталуына тыйым салатын модификатор","o":["final","private","static","abstract","public"],"a":"final"},{"q":"Полиморфизм дегеніміз не?","o":["Объектінің нақты типіне байланысты әртүрлі мінез-құлық көрсету қабілеті","Бір аттас бірнеше әдістің болуы","Деректерді жасыру","Объектіні көшіру","Барлық әдістерді public ету"],"a":"Объектінің нақты типіне байланысты әртүрлі мінез-құлық көрсету қабілеті"},{"q":"Балалық кластың объектісін ата-аналық кластың айнымалысына салу мүмкіндігі","o":["полиморфизм (жоғарыға түрлендіру)","төменге түрлендіру","инкапсуляция","шамадан тыс жүктеу","статикалық полиморфизм"],"a":"полиморфизм (жоғарыға түрлендіру)"},{"q":"Java-дағы барлық кластардың түпкі ата-анасы","o":["Object","Class","System","Main","Root"],"a":"Object"},{"q":"toString() әдісі қай кластан мұраға беріледі?","o":["Object","String","System","Throwable","Runtime"],"a":"Object"},{"q":"equals() және hashCode() әдістерін бірге қайта анықтау ұсынылады, олар қай кластан келеді?","o":["Object","String","Integer","Class","System"],"a":"Object"},{"q":"Балалық кластың конструкторында super() шақырмасақ","o":["Ата-аналық кластың параметрсіз конструкторы автоматты түрде шақырылады","Компиляция қатесі","Параметрлі конструктор шақырылады","Object() шақырылады","Ешқандай конструктор шақырылмайды"],"a":"Ата-аналық кластың параметрсіз конструкторы автоматты түрде шақырылады"},{"q":"Балалық кластарда міндетті түрде қайта анықталуы тиіс әдісті белгілеу үшін қолданылатын аннотация","o":["@Override (міндетті емес, бірақ ұсынылады)","@MustOverride","@Abstract","@Required","@ForceOverride"],"a":"@Override (міндетті емес, бірақ ұсынылады)"},{"q":"Динамикалық полиморфизм қалай жүзеге асады?","o":["Әдістерді қайта анықтау және суперкласс сілтемесі арқылы","Әдістерді шамадан тыс жүктеу арқылы","static әдістер арқылы","private әдістер арқылы","final әдістер арқылы"],"a":"Әдістерді қайта анықтау және суперкласс сілтемесі арқылы"},{"q":"Код нәтижесі қандай болады? ```java class A { public String show() { return \"A\"; } } class B extends A { public String show() { return \"B\"; } } class C extends B { public String show() { return \"C\"; } } public class Main { public static void main(String[] args) { A obj = new C(); System.out.println(obj.show()); } } ```","o":["C","A","B","ABC","орындау кезінде қате"],"a":"C"},{"q":"Код компиляцияланады ма? ```java class Parent { private void hello() { System.out.println(\"Parent\"); } } class Child extends Parent { public void hello() { System.out.println(\"Child\"); } } public class Main { public static void main(String[] args) { Parent p = new Child(); // p.hello(); // осы жолды ашсақ } } ```","o":["Жоқ, private әдісті қайта анықтауға болмайды (компиляция қатесі)","Иә, Child шығарады","Иә, Parent шығарады","Орындау кезінде қате","Компиляцияланады, бірақ ештеңе шығармайды"],"a":"Жоқ, private әдісті қайта анықтауға болмайды (компиляция қатесі)"},{"q":"Абстрактілі класс қалай жарияланады?","o":["abstract class КлассАты","interface КлассАты","final class КлассАты","public class КлассАты","static class КлассАты"],"a":"abstract class КлассАты"},{"q":"Абстрактілі кластан объект құруға бола ма?","o":["Жоқ, объект құруға тыйым салынады","Иә, әдеттегідей new арқылы","Тек static блокта","Тек интерфейс арқылы","Тек финалдық класта"],"a":"Жоқ, объект құруға тыйым салынады"},{"q":"Абстрактілі әдіс деген не?","o":["Денесі жоқ, тек жарияланған әдіс","Денесі бар, бірақ қайтармайтын әдіс","private әдіс","static әдіс","final әдіс"],"a":"Денесі жоқ, тек жарияланған әдіс"},{"q":"Абстрактілі әдісті қайда міндетті түрде іске асыру керек?","o":["Балалық конкретті класта","Абстрактілі класта","Интерфейсте","Object класта","Main класта"],"a":"Балалық конкретті класта"},{"q":"Интерфейс қалай жарияланады?","o":["interface ИнтерфейсАты","abstract class ИнтерфейсАты","public interface ИнтерфейсАты","class ИнтерфейсАты","enum ИнтерфейсАты"],"a":"interface ИнтерфейсАты"},{"q":"Java 7-ге дейін интерфейсте не болуы мүмкін еді?","o":["Тек абстрактілі әдістер мен константалар","Конструкторлар","Өрістер (айнымалылар)","private әдістер","статикалық блоктар"],"a":"Тек абстрактілі әдістер мен константалар"},{"q":"Java 8-ден бастап интерфейсте не пайда болды?","o":["default және static әдістер денесімен","Конструкторлар","private өрістер","final әдістер","protected әдістер"],"a":"default және static әдістер денесімен"},{"q":"Java 9-дан бастап интерфейсте не енгізілді?","o":["private әдістер","protected әдістер","final өрістер","конструкторлар","статикалық өрістер"],"a":"private әдістер"},{"q":"Класс интерфейсті қалай іске асырады?","o":["implements ИнтерфейсАты","extends ИнтерфейсАты","inherits ИнтерфейсАты","uses ИнтерфейсАты","include ИнтерфейсАты"],"a":"implements ИнтерфейсАты"},{"q":"Бір класс бірнеше интерфейсті іске асыра ала ма?","o":["Иә, бірнеше implements арқылы","Жоқ, тек бір интерфейс","Тек бір абстрактілі кластан","Тек бір финалдық кластан","Тек Object класынан"],"a":"Иә, бірнеше implements арқылы"},{"q":"Абстрактілі класс пен интерфейстің басты айырмашылығы","o":["Абстрактілі класта күй (fields) болуы мүмкін, интерфейсте болмайды (Java 8-ге дейін)","Интерфейсте конструктор болады","Абстрактілі класта default әдістер болмайды","Интерфейсті extends арқылы мұраға алады","Абстрактілі класты implements арқылы іске асырады"],"a":"Абстрактілі класта күй (fields) болуы мүмкін, интерфейсте болмайды (Java 8-ге дейін)"},{"q":"default әдісті қайда іске асыруға болады?","o":["Тікелей интерфейс ішінде","Балалық класта","Абстрактілі класта","Object класта","Main класта"],"a":"Тікелей интерфейс ішінде"},{"q":"Код нәтижесі қандай? ```java interface A { default void show() { System.out.println(\"A\"); } } interface B { default void show() { System.out.println(\"B\"); } } class C implements A, B { public void show() { A.super.show(); } } public class Main { public static void main(String[] args) { new C().show(); } } ```","o":["A","B","AB","қате компиляцияда","қате орындауда"],"a":"A"},{"q":"Код компиляцияланады ма? ```java abstract class X { abstract void test(); } interface Y { default void test() { System.out.println(\"Y\"); } } class Z extends X implements Y { } // test() іске асырылмаған public class Main { public static void main(String[] args) { new Z().test(); } } ```","o":["Иә, Y-дағы default әдіс қолданылады","Жоқ, абстрактілі әдісті міндетті түрде іске асыру керек","Иә, бірақ ештеңе шықпайды","Жоқ, бірнеше мұрагерлік қатесі","Жоқ, default әдісті override жасау керек"],"a":"Иә, Y-дағы default әдіс қолданылады"},{"q":"Код нәтижесі қандай? ```java public static int test() { try { return 1; } catch (Exception e) { return 2; } finally { return 3; } } System.out.println(test()); ```","o":["3","1","2","0","қате"],"a":"3"},{"q":"Код компиляцияланады ма? ```java public static void main(String[] args) throws IOException { try { FileInputStream f = new FileInputStream(\"file.txt\"); } catch (FileNotFoundException e) { System.out.println(\"Файл жоқ\"); } } ```","o":["Жоқ, FileNotFoundException – checked, оны өңдеу немесе throws жасау керек","Иә, бәрі дұрыс","Иә, бірақ ештеңе шығармайды","Жоқ, IOException throws қате","Жоқ, try-with-resources керек"],"a":"Жоқ, FileNotFoundException – checked, оны өңдеу немесе throws жасау керек"},{"q":"Код нәтижесі қандай? ```java List<String> list = new ArrayList<>(); list.add(\"A\"); list.add(\"B\"); list.add(\"C\"); Iterator<String> it = list.iterator(); while (it.hasNext()) { String s = it.next(); if (s.equals(\"B\")) it.remove(); } System.out.println(list.size()); ```","o":["2","3","1","ConcurrentModificationException","0"],"a":"2"},{"q":"Код нәтижесі қандай? ```java Map<String, Integer> map = new HashMap<>(); map.put(\"A\", 1); map.put(null, 2); map.put(\"B\", null); map.put(null, 3); System.out.println(map.size() + \" \" + map.get(null) + \" \" + map.get(\"B\")); ```","o":["3 3 null","2 3 null","4 3 null","2 2 null","қате орындау кезінде"],"a":"3 3 null"},{"q":"Код не шығарады? ```java try (PrintWriter pw = new PrintWriter(\"hello.txt\")) { pw.println(\"Сәлем әлем!\"); } System.out.println(Files.readString(Path.of(\"hello.txt\"))); ```","o":["Сәлем әлем!","FileNotFoundException","Ештеңе шықпайды","NoSuchElementException","NullPointerException"],"a":"Сәлем әлем!"},{"q":"Қай код файлды міндетті түрде дұрыс жабады?","o":["try (Scanner sc = new Scanner(new File(\"data.txt\"))) { ... }","Scanner sc = new Scanner(new File(\"data.txt\")); ... sc.close();","Scanner sc = new Scanner(\"data.txt\");","new Scanner(new File(\"data.txt\")).close();","Scanner sc = null;"],"a":"try (Scanner sc = new Scanner(new File(\"data.txt\"))) { ... }"},{"q":"Java-да char типі неше биттік","o":["16 биттік Unicode таңбасын сақтайды","8 биттік Unicode таңбасын сақтайды","32 биттік Unicode таңбасын сақтайды","64 биттік Unicode таңбасын сақтайды","24 биттік Unicode таңбасын сақтайды"],"a":"16 биттік Unicode таңбасын сақтайды"}];
+const SECTIONS=[
+ {n:"Тест 1",t:"Основы и синтаксис",c:"cy",ic:"laptop"},
+ {n:"Тест 2",t:"Циклы, массивы, ООП",c:"bl",ic:"ruler"},
+ {n:"Тест 3",t:"Интерфейсы и коллекции",c:"pu",ic:"column"},
+ {n:"Тест 4",t:"Потоки и GUI",c:"gr",ic:"atom"},
+ {n:"Тест 5",t:"Массивы и строки",c:"or",ic:"code"},
+ {n:"Тест 6",t:"Методы и наследование",c:"pk",ic:"gear"}
+];
+const PER=50;
+SECTIONS.forEach((s,i)=>{s.from=i*PER;s.to=Math.min((i+1)*PER,Q.length);});
+const ICONS={
+ laptop:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M14 14h36l4 28H10z" fill="rgba(34,224,255,.15)"/><path d="M6 46h52l-4 6H10z"/><path d="M20 26l8 5-8 5" /></svg>',
+ ruler:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M10 54V10l44 44z" fill="rgba(63,123,255,.2)"/><path d="M22 54l0-12-12 0M30 54v-6M38 54v-6M46 54v-6"/><path d="M18 30l0 0M16 26l12 12" stroke-linecap="round"/></svg>',
+ column:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M14 14c-6 0-6 8 0 8h36c6 0 6-8 0-8z" fill="rgba(179,107,255,.2)"/><path d="M20 22v28M28 22v28M36 22v28M44 22v28M12 50h40v6H12z"/></svg>',
+ atom:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5"><ellipse cx="32" cy="32" rx="26" ry="10"/><ellipse cx="32" cy="32" rx="26" ry="10" transform="rotate(60 32 32)"/><ellipse cx="32" cy="32" rx="26" ry="10" transform="rotate(120 32 32)"/><circle cx="32" cy="32" r="4" fill="currentColor"/></svg>',
+ code:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18L8 32l14 14M42 18l14 14-14 14M36 14L28 50"/></svg>',
+ gear:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><circle cx="32" cy="32" r="9"/><path d="M28 6h8l2 7 6 3 6-4 6 6-4 6 3 6 7 2v8l-7 2-3 6 4 6-6 6-6-4-6 3-2 7h-8l-2-7-6-3-6 4-6-6 4-6-3-6-7-2v-8l7-2 3-6-4-6 6-6 6 4 6-3z" transform="scale(.9) translate(4 4)"/></svg>',
+ bolt:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M36 6L14 36h16l-4 22 24-32H34z"/></svg>',
+ clock:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="32" cy="34" r="22"/><path d="M32 20v14l9 6M26 6h12"/></svg>',
+ heart:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M32 54C10 38 8 24 16 16c6-5 13-3 16 3 3-6 10-8 16-3 8 8 6 22-16 38z"/></svg>',
+ flag:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 58V8M14 10h36l-8 11 8 11H14"/></svg>',
+ retry:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M52 32a20 20 0 1 1-6-14M52 8v12H40"/></svg>',
+ cap:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M32 12L4 26l28 14 28-14zM16 34v12c8 8 24 8 32 0V34"/></svg>'
+};
+const ARROW='<svg class="ar" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+
+/* ---------- storage ---------- */
+const KEY='sessionquiz_v1';
+function fresh(){return {name:'Студент',qs:{},hist:[],daily:{},session:null};}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.qs)return Object.assign(fresh(),d);}catch(e){}return fresh();}
+let S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const dkey=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const ALL=Q.map((_,i)=>i);
+function mast(id){const r=S.qs[id];if(!r)return 0;if(!r.l)return .1;return r.s>=3?1:r.s===2?.85:.55;}
+function readiness(ids){ids=ids||ALL;if(!ids.length)return 0;let t=0;ids.forEach(i=>t+=mast(i));return Math.round(t/ids.length*100);}
+function accuracy(){let c=0,w=0;for(const k in S.qs){c+=S.qs[k].c;w+=S.qs[k].w;}return c+w?Math.round(c/(c+w)*100):null;}
+function rankName(p){return p<15?'Новичок':p<35?'Ученик':p<55?'Практик':p<75?'Уверенный':p<90?'Профи':'Мастер сессии';}
+function streak(){let n=0;const d=new Date();if(!(S.daily[dkey(d)]>0))d.setDate(d.getDate()-1);while(S.daily[dkey(d)]>0){n++;d.setDate(d.getDate()-1);}return n;}
+function todayCount(){return S.daily[dkey()]||0;}
+const GOAL=20;
+let tT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2200);}
+
+/* ---------- navigation ---------- */
+let cur='home';
+function go(v){
+  cur=v;
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+  const main=['home','tests','rooms','prof'].includes(v);
+  $('#nav').classList.toggle('on',main);
+  document.querySelectorAll('nav [data-go]').forEach(b=>b.classList.toggle('act',b.dataset.go===v));
+  const el=$('#v-'+v);if(el)el.scrollTop=0;
+  if(v==='home')renderHome();if(v==='tests')renderTests();if(v==='rooms')renderRooms();if(v==='prof')renderProf();
+}
+document.querySelectorAll('nav [data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+
+/* ---------- cards ---------- */
+function subCard(s,i){
+  const ids=ALL.slice(s.from,s.to),r=readiness(ids);
+  return `<button class="cb btn sub c-${s.c}" data-sec="${i}"><span class="in"><span class="ic">${ICONS[s.ic]}</span><span style="min-width:0;flex:1"><div class="nm">${esc(s.n)} · ${s.from+1}–${s.to}</div><div class="sb">${esc(s.t)} · ${r}%</div><div class="bar"><i style="width:${r}%"></i></div></span></span></button>`;
+}
+function bindSecs(root){root.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>startMode('section',+b.dataset.sec));}
+function modeRow(id,ic,title,sub,c){return `<button class="cb btn row" data-mode="${id}" style="--c:${c||'#22e0ff'}"><span class="in"><span class="ic">${ICONS[ic]}</span><span style="min-width:0"><b>${title}</b><small>${sub}</small></span>${ARROW}</span></button>`;}
+function bindModes(root){root.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>startMode(b.dataset.mode));}
+
+/* ---------- home ---------- */
+function renderHome(){
+  $('#sTests').textContent=S.hist.length;
+  const a=accuracy();$('#sAcc').textContent=(a===null?0:a)+'%';
+  const seen=Object.keys(S.qs).length;
+  $('#sRate').textContent=seen?readiness()+'%':'—';
+  $('.stat:nth-child(3) .l').innerHTML=seen?'Готов к<br>сессии':'Рейтинг';
+  $('#avatar').textContent=(S.name||'D').trim().charAt(0).toUpperCase()||'D';
+  $('#subs').innerHTML=SECTIONS.map(subCard).join('');bindSecs($('#subs'));
+  $('#bellDot').style.display=todayCount()>=GOAL?'none':'block';
+  const ss=S.session,note=$('#resumeNote');
+  if(ss){$('#bGo').firstChild.textContent='Продолжить тест ';note.hidden=false;note.textContent=`Незавершённый тест: ${ss.title} — ${ss.i}/${ss.ids.length}`;}
+  else{$('#bGo').firstChild.textContent='Начать тест ';note.hidden=true;}
+}
+$('#bGo').onclick=()=>{S.session?resume():startMode('quick');};
+$('#quick').onclick=()=>startMode('quick');
+$('#allSubs').onclick=e=>{e.preventDefault();go('tests');};
+$('#avatar').onclick=()=>go('prof');
+
+/* ---------- tests / rooms ---------- */
+function weakIds(){return ALL.filter(i=>S.qs[i]&&!S.qs[i].l);}
+function renderTests(){
+  const w=weakIds().length;
+  $('#modeList').innerHTML=
+    modeRow('quick','bolt','Быстрый тест','20 вопросов, слабые темы в приоритете')+
+    modeRow('exam','cap','Экзамен','50 случайных вопросов','#3f7bff')+
+    modeRow('mistakes','retry','Работа над ошибками',w?`${w} вопросов с ошибками`:'Пока нет ошибок','#ff6fb5');
+  bindModes($('#modeList'));
+  $('#subs2').innerHTML=SECTIONS.map(subCard).join('');bindSecs($('#subs2'));
+}
+function renderRooms(){
+  const un=ALL.filter(i=>!S.qs[i]).length;
+  $('#roomList').innerHTML=
+    modeRow('blitz','clock','Блиц','60 секунд — сколько успеешь ответить','#ffb04a')+
+    modeRow('survival','heart','Выживание','3 жизни. Ошибся три раза — игра окончена','#ff4d6d')+
+    modeRow('marathon','flag','Марафон',un?`${un} ещё не встречавшихся вопросов`:'Все вопросы пройдены — пройди заново','#2cf08a');
+  bindModes($('#roomList'));
+}
+
+/* ---------- profile ---------- */
+function fmtDate(t){const d=new Date(t);return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});}
+function renderProf(){
+  const r=readiness(),a=accuracy();
+  $('#pName').value=S.name;$('#pAv').textContent=(S.name||'D').trim().charAt(0).toUpperCase()||'D';
+  $('#pRank').textContent=Object.keys(S.qs).length?rankName(r):'Новичок';
+  $('#pR').textContent=r+'%';$('#pA').textContent=(a===null?0:a)+'%';$('#pS').textContent=streak();
+  $('#pBars').innerHTML=SECTIONS.map(s=>{const p=readiness(ALL.slice(s.from,s.to));return `<div class="br"><div class="tp"><span>${esc(s.n)} · ${s.from+1}–${s.to}</span><span>${p}%</span></div><div class="tr"><i style="width:${p}%"></i></div></div>`;}).join('');
+  const h=S.hist.slice(-10).reverse();
+  $('#pHist').innerHTML=h.length?h.map(x=>`<div><span>${fmtDate(x.ts)} · ${esc(x.title)}</span><b>${x.correct}/${x.total}</b></div>`).join(''):'<div class="empty" style="display:block">Тестов пока нет. Пройди первый.</div>';
+}
+$('#pName').oninput=e=>{S.name=e.target.value.slice(0,20)||'Студент';$('#pAv').textContent=S.name.trim().charAt(0).toUpperCase()||'D';save();};
+$('#btnExp').onclick=()=>{
+  const b=new Blob([JSON.stringify(S)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download='session-quiz-progress.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);toast('Файл сохранён');
+};
+$('#btnImp').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d||typeof d.qs!=='object')throw 0;S=Object.assign(fresh(),d);save();renderProf();toast('Прогресс загружен');}catch(x){toast('Это не файл прогресса');}};
+  rd.readAsText(f);e.target.value='';
+};
+$('#btnReset').onclick=()=>{if(confirm('Удалить весь прогресс и историю? Это нельзя отменить.')){S=fresh();save();renderProf();toast('Прогресс сброшен');}};
+let deferred=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('#btnInstall').hidden=false;});
+$('#btnInstall').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null;$('#btnInstall').hidden=true;}};
+window.addEventListener('appinstalled',()=>{$('#btnInstall').hidden=true;});
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!navigator.standalone){const b=$('#btnInstall');b.hidden=false;b.onclick=()=>toast('Safari: «Поделиться» → «На экран Домой»');}
+
+/* ---------- bell ---------- */
+$('#bell').onclick=()=>{
+  const n=todayCount(),p=Math.min(100,Math.round(n/GOAL*100)),st=streak();
+  $('#sheetBody').innerHTML=`<h3>Цель дня</h3>
+   <div class="br"><div class="tp"><span>${n} из ${GOAL} вопросов</span><span>${p}%</span></div><div class="tr"><i style="width:${p}%"></i></div></div>
+   <p>${n>=GOAL?'Цель выполнена. Можно закрепить результат ещё одним тестом.':'Ответь на '+(GOAL-n)+' вопросов, чтобы выполнить цель дня.'}</p>
+   <p>Дней подряд: <b style="color:var(--cy)">${st}</b></p>
+   <button class="cta" id="shClose" style="width:100%;justify-content:center;margin-top:10px">Понятно</button>`;
+  $('#sheet').classList.add('on');$('#shClose').onclick=closeSheet;
+};
+function closeSheet(){$('#sheet').classList.remove('on');}
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet();};
+
+/* ---------- quiz engine ---------- */
+let tick=null;
+function pickWeighted(n,pool){return pool.map(id=>({id,k:mast(id)+Math.random()*.6})).sort((a,b)=>a.k-b.k).slice(0,n).map(x=>x.id);}
+function startMode(mode,sec){
+  if(S.session&&!confirm('Есть незавершённый тест. Начать новый? Старый будет потерян.'))return;
+  let ids=[],title='',extra={};
+  if(mode==='quick'){ids=pickWeighted(20,ALL);title='Быстрый тест';}
+  else if(mode==='exam'){ids=shuffle(ALL).slice(0,50);title='Экзамен';}
+  else if(mode==='section'){const s=SECTIONS[sec];ids=shuffle(ALL.slice(s.from,s.to));title=s.n;}
+  else if(mode==='mistakes'){ids=shuffle(weakIds());title='Работа над ошибками';if(!ids.length){toast('Ошибок пока нет — пройди тест');return;}}
+  else if(mode==='blitz'){ids=shuffle(ALL);title='Блиц · 60 сек';extra={limit:60};}
+  else if(mode==='survival'){ids=shuffle(ALL);title='Выживание';extra={lives:3};}
+  else if(mode==='marathon'){let un=ALL.filter(i=>!S.qs[i]);if(!un.length)un=ALL;ids=shuffle(un);title='Марафон';}
+  begin(mode,title,ids,extra);
+}
+function begin(mode,title,ids,extra){
+  S.session=Object.assign({mode,title,ids,i:0,res:[],sel:[],ord:ids.map(id=>shuffle(Q[id].o.map((_,k)=>k))),r0:readiness(),ts:Date.now()},extra||{});
+  if(mode==='blitz'){S.session.endAt=Date.now()+S.session.limit*1000;}
+  save();showQ();
+}
+function resume(){const s=S.session;if(!s)return;if(s.mode==='blitz'){s.endAt=Date.now()+s.limit*1000;}showQ();}
+function showQ(){
+  const s=S.session;go('quiz');
+  if(s.i>=s.ids.length||(s.lives!==undefined&&s.lives<=0)){finish();return;}
+  const id=s.ids[s.i],q=Q[id],sel=s.sel[s.i];
+  $('#qTitle').textContent=s.title;
+  $('#qCount').textContent=s.mode==='blitz'?`Отвечено: ${s.res.length}`:`Вопрос ${s.i+1} из ${s.ids.length}`;
+  $('#qProg').style.width=(s.mode==='blitz'?100*(s.limit-Math.max(0,(s.endAt-Date.now())/1000))/s.limit:s.i/s.ids.length*100)+'%';
+  $('#qNum').textContent='Вопрос №'+(id+1);
+  $('#qText').textContent=q.q;
+  const L='ABCDE';
+  $('#qOpts').innerHTML=s.ord[s.i].map((k,pos)=>`<button class="cb btn opt" data-k="${k}"><span class="in"><span class="lt">${L[pos]}</span><span>${esc(q.o[k])}</span></span></button>`).join('');
+  $('#qOpts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
+  $('#qFb').textContent='';$('#qFb').className='fb';$('#qNext').hidden=true;
+  clearInterval(tick);
+  if(s.mode==='blitz'){tick=setInterval(timerStep,250);timerStep();}
+  else if(s.lives!==undefined){$('#qChip').className='chip';$('#qChip').textContent='♥'.repeat(s.lives)+'♡'.repeat(3-s.lives);}
+  else {$('#qChip').className='chip';$('#qChip').textContent='';}
+  if(sel!==undefined&&sel!==null)paint(sel);
+}
+function timerStep(){
+  const s=S.session;if(!s||s.mode!=='blitz'){clearInterval(tick);return;}
+  const left=Math.max(0,Math.ceil((s.endAt-Date.now())/1000));
+  const c=$('#qChip');c.textContent=left+' с';c.className='chip'+(left<=10?' red':'');
+  $('#qProg').style.width=(100*(1-left/s.limit))+'%';
+  if(left<=0){clearInterval(tick);finish();}
+}
+function paint(sel){
+  const s=S.session,q=Q[s.ids[s.i]],right=q.o.indexOf(q.a);
+  $('#qOpts').querySelectorAll('.opt').forEach(b=>{
+    const k=+b.dataset.k;b.disabled=true;
+    if(k===right)b.classList.add('ok');else if(k===sel)b.classList.add('bad');else b.classList.add('dim');
+  });
+  const ok=sel===right;
+  $('#qFb').textContent=ok?'Верно!':'Неверно. Правильный ответ выделен зелёным.';$('#qFb').className='fb '+(ok?'ok':'bad');
+  const last=s.i+1>=s.ids.length||(s.lives!==undefined&&s.lives<=0);
+  $('#qNext').textContent=last?'Показать результат':'Далее';$('#qNext').hidden=false;
+  if(s.lives!==undefined){$('#qChip').textContent='♥'.repeat(Math.max(0,s.lives))+'♡'.repeat(3-Math.max(0,s.lives));}
+}
+function answer(k){
+  const s=S.session;if(!s||s.sel[s.i]!==undefined&&s.sel[s.i]!==null)return;
+  const id=s.ids[s.i],q=Q[id],ok=q.o[k]===q.a;
+  s.sel[s.i]=k;s.res[s.i]=ok?1:0;
+  const r=S.qs[id]||(S.qs[id]={c:0,w:0,s:0,l:0,t:0});
+  if(ok){r.c++;r.s++;r.l=1;}else{r.w++;r.s=0;r.l=0;if(s.lives!==undefined)s.lives--;}
+  r.t=Date.now();
+  const d=dkey();S.daily[d]=(S.daily[d]||0)+1;
+  save();paint(k);
+}
+$('#qNext').onclick=()=>{const s=S.session;s.i++;save();showQ();};
+$('#qx').onclick=()=>{
+  const s=S.session;clearInterval(tick);
+  if(s.mode==='blitz'){if(confirm('Выйти из блица? Результат не сохранится.')){S.session=null;save();go('rooms');}else timerStepResume();return;}
+  if(s.res.length===0){S.session=null;save();go('home');return;}
+  if(confirm('Выйти? Прогресс теста сохранится, продолжишь позже.\n\nОК — выйти и сохранить\nОтмена — остаться')){go('home');}
+};
+function timerStepResume(){const s=S.session;if(s&&s.mode==='blitz'){tick=setInterval(timerStep,250);}}
+document.addEventListener('visibilitychange',()=>{});
+
+function finish(){
+  clearInterval(tick);
+  const s=S.session;if(!s){go('home');return;}
+  const total=s.res.filter(v=>v!==undefined).length,ok=s.res.filter(v=>v===1).length;
+  const wrong=[];s.res.forEach((v,i)=>{if(v===0)wrong.push(s.ids[i]);});
+  S.hist.push({ts:Date.now(),mode:s.mode,title:s.title,total,correct:ok});
+  if(S.hist.length>200)S.hist=S.hist.slice(-200);
+  const r0=s.r0,mode=s.mode;S.session=null;save();
+  const pct=total?Math.round(ok/total*100):0,r1=readiness(),diff=r1-r0;
+  go('res');
+  $('#rTitle').textContent=s.title;
+  $('#rPct').textContent=pct+'%';
+  $('#rOk').textContent=ok;$('#rBad').textContent=total-ok;$('#rRate').textContent=r1+'%';
+  $('#rArc').style.strokeDashoffset=263.9;
+  setTimeout(()=>{$('#rArc').style.strokeDashoffset=263.9*(1-pct/100);},60);
+  const verdict=pct>=90?'Отличный результат!':pct>=70?'Хорошо, ещё немного до идеала.':pct>=50?'Неплохо. Разбери ошибки.':'Нужно ещё потренироваться.';
+  $('#rMsg').textContent=total?`${verdict} Готовность к сессии: ${r1}%`+(diff?` (${diff>0?'+':''}${diff}%)`:''):'Ты не успел ответить ни на один вопрос.';
+  const rr=$('#rRetry');rr.hidden=!wrong.length;
+  rr.onclick=()=>begin('retry','Повтор ошибок',shuffle(wrong),{});
+  $('#rAgain').onclick=()=>{mode==='section'||mode==='retry'||mode==='mistakes'?go('tests'):startMode(mode);};
+  $('#rHome').onclick=()=>go('home');
+}
+
+/* ---------- init ---------- */
+go('home');
+if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+</script>
+</body>
+</html>
